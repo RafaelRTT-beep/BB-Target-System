@@ -31,6 +31,7 @@ WebSocketsServer webSocket(WEBSOCKET_PORT);
 
 // Matrix data
 int matrixValues[MATRIX_ROWS][MATRIX_COLS];
+int prevPeakValue = 0;        // Vorige scan piekwaarde (voor stijgende flank detectie)
 int baselineValues[MATRIX_ROWS][MATRIX_COLS];
 
 // Hit tracking
@@ -190,7 +191,19 @@ void detectHit() {
   }
 
   // Geen hit als onder drempel
-  if (peakValue < HIT_THRESHOLD) return;
+  if (peakValue < HIT_THRESHOLD) {
+    prevPeakValue = peakValue;
+    return;
+  }
+
+  // Stijgende flank detectie: alleen triggeren als het signaal
+  // NIEUW is (vorige scan was onder drempel). Dit voorkomt dat
+  // een constant signaal (slecht contact, druk) eindeloos triggert.
+  if (prevPeakValue >= HIT_THRESHOLD) {
+    prevPeakValue = peakValue;
+    return;
+  }
+  prevPeakValue = peakValue;
 
   // Centroid berekening (gewogen gemiddelde)
   // Dit geeft sub-cel nauwkeurigheid
