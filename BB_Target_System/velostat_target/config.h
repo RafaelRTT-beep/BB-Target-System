@@ -26,7 +26,7 @@
 const int ROW_PINS[MATRIX_ROWS] = {
   4,    // Rij 0 (bovenste strip)
   16,   // Rij 1
-  17,   // Rij 2
+  23,   // Rij 2
   5,    // Rij 3
   18,   // Rij 4
   19,   // Rij 5
