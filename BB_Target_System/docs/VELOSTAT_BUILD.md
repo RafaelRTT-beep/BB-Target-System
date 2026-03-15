@@ -257,10 +257,11 @@ Het doel is een "sandwich" structuur:
 
 In `config.h`:
 ```cpp
-#define HIT_THRESHOLD  300   // Verhoog als er vals-positieven zijn
-                              // Verlaag als hits gemist worden
-#define NOISE_FLOOR    50    // Verhoog bij veel ruis
-#define DEBOUNCE_MS    150   // Verhoog als dubbele hits voorkomen
+#define HIT_THRESHOLD  80    // Standaard voor 15-30m afstand
+                              // Verhoog (120-200) als er vals-positieven zijn
+                              // Verlaag (40-60) als hits gemist worden
+#define NOISE_FLOOR    20    // Verhoog bij veel ruis
+#define DEBOUNCE_MS    200   // Verhoog als dubbele hits voorkomen
 ```
 
 ### Beste resultaten
@@ -269,15 +270,16 @@ In `config.h`:
 - **Schuimrubber**: Essentieel voor goede terugvering
 - **Kopertape**: Gebruik tape met **geleidende lijmlaag**!
   (Niet alle kopertape geleidt door de lijm heen)
-- **Druk**: Velostat heeft redelijke druk nodig - BB's op korte afstand werken het best
-- **Afstand**: Optimaal 3-10 meter, afhankelijk van je wapen
+- **Druk**: Velostat heeft redelijke druk nodig - gebruik dunner velostat (0.1mm) voor maximale gevoeligheid
+- **Afstand**: Optimaal **15-30 meter**. De gevoeligheid is afgestemd op de lagere inslagkracht op deze afstand
+- **Tip lange afstand**: Gebruik 2 lagen velostat boven elkaar voor extra gevoeligheid op 25-30m
 
 ### Probleemoplossing
 
 | Probleem | Oplossing |
 |----------|-----------|
-| Geen hits gedetecteerd | Verlaag `HIT_THRESHOLD` (bv. 100), controleer bedrading |
-| Valse hits | Verhoog `HIT_THRESHOLD`, controleer pull-down weerstanden |
+| Geen hits gedetecteerd | Verlaag `HIT_THRESHOLD` (bv. 40-60), controleer bedrading |
+| Valse hits | Verhoog `HIT_THRESHOLD` (bv. 120-150), controleer pull-down weerstanden |
 | Onnauwkeurige positie | Controleer of strips goed contact maken met velostat |
 | WiFi verbindt niet | Controleer of ESP32 opstart (Serial Monitor 115200 baud) |
 | Dubbele hits | Verhoog `DEBOUNCE_MS` (bv. 250) |

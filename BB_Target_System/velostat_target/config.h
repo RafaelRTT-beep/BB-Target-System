@@ -55,9 +55,12 @@ const int COL_PINS[MATRIX_COLS] = {
 // nodig naar GND (extern aansluiten!)
 
 // ---- Hit Detectie Instellingen ----
-#define HIT_THRESHOLD     300     // ADC waarde (0-4095) drempel voor hit
-#define NOISE_FLOOR       50      // Alles onder deze waarde = ruis
-#define DEBOUNCE_MS       150     // Tijd tussen hits (ms)
+// Afgestemd op 15-30 meter afstand (BB's hebben minder energie)
+// Bij dichterbij schieten: verhoog HIT_THRESHOLD naar 200-300
+#define HIT_THRESHOLD     80      // ADC waarde (0-4095) drempel voor hit
+                                   // Laag voor zwakkere inslagen op 15-30m
+#define NOISE_FLOOR       20      // Alles onder deze waarde = ruis
+#define DEBOUNCE_MS       200     // Tijd tussen hits (ms), iets hoger voor lange afstand
 #define SCAN_INTERVAL_US  100     // Microseconden tussen matrix scans
 #define ROW_SETTLE_US     50      // Wachttijd na rij activeren (microsec)
 
