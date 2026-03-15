@@ -94,11 +94,15 @@ void setup() {
 
   // Baseline kalibratie
   DEBUG_PRINTLN("Kalibreren... niet aanraken!");
+  Serial.flush();
   delay(500);
   calibrateBaseline();
   DEBUG_PRINTLN("Kalibratie compleet.");
+  Serial.flush();
 
   // WiFi Access Point starten
+  DEBUG_PRINTLN(">> WiFi starten...");
+  Serial.flush();
   WiFi.mode(WIFI_AP);
   WiFi.softAP(WIFI_SSID, WIFI_PASSWORD);
   delay(100);
@@ -247,24 +251,29 @@ void calibrateBaseline() {
   // Neem gemiddelde van meerdere scans
   const int NUM_SAMPLES = 20;
 
+  DEBUG_PRINTLN(">> Baseline reset...");
   // Reset baseline
   for (int r = 0; r < MATRIX_ROWS; r++)
     for (int c = 0; c < MATRIX_COLS; c++)
       baselineValues[r][c] = 0;
 
   // Meerdere scans middelen
+  DEBUG_PRINTLN(">> Start sampling...");
   for (int s = 0; s < NUM_SAMPLES; s++) {
+    DEBUG_PRINTF("  Sample %d/%d\n", s + 1, NUM_SAMPLES);
     for (int r = 0; r < MATRIX_ROWS; r++) {
       digitalWrite(ROW_PINS[r], HIGH);
       delayMicroseconds(ROW_SETTLE_US);
       for (int c = 0; c < MATRIX_COLS; c++) {
-        baselineValues[r][c] += analogRead(COL_PINS[c]);
+        int val = analogRead(COL_PINS[c]);
+        baselineValues[r][c] += val;
       }
       digitalWrite(ROW_PINS[r], LOW);
     }
     delay(10);
   }
 
+  DEBUG_PRINTLN(">> Gemiddelde berekenen...");
   // Gemiddelde berekenen
   for (int r = 0; r < MATRIX_ROWS; r++) {
     for (int c = 0; c < MATRIX_COLS; c++) {
@@ -272,6 +281,7 @@ void calibrateBaseline() {
       DEBUG_PRINTF("Baseline[%d][%d] = %d\n", r, c, baselineValues[r][c]);
     }
   }
+  DEBUG_PRINTLN(">> calibrateBaseline() KLAAR");
 }
 
 // ============================================
