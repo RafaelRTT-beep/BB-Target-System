@@ -57,9 +57,9 @@ const int COL_PINS[MATRIX_COLS] = {
 // ---- Hit Detectie Instellingen ----
 // Afgestemd op 15-30 meter afstand (BB's hebben minder energie)
 // Bij dichterbij schieten: verhoog HIT_THRESHOLD naar 200-300
-#define HIT_THRESHOLD     40      // ADC waarde (0-4095) drempel voor hit
-                                   // Laag gezet voor debugging, verhoog als er valse hits zijn
-#define NOISE_FLOOR       20      // Alles onder deze waarde = ruis
+#define HIT_THRESHOLD     5       // ADC waarde (0-4095) drempel voor hit
+                                   // Zeer laag voor zwak velostat signaal
+#define NOISE_FLOOR       2       // Alles onder deze waarde = ruis
 #define DEBOUNCE_MS       200     // Tijd tussen hits (ms), iets hoger voor lange afstand
 #define SCAN_INTERVAL_US  100     // Microseconden tussen matrix scans
 #define ROW_SETTLE_US     50      // Wachttijd na rij activeren (microsec)
