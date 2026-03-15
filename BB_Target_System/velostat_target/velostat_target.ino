@@ -139,6 +139,9 @@ void setup() {
 // ============================================
 // LOOP
 // ============================================
+unsigned long lastDebugTime = 0;
+int debugMaxPeak = 0;
+
 void loop() {
   webSocket.loop();
   server.handleClient();
@@ -146,6 +149,20 @@ void loop() {
   if (sessionActive) {
     scanMatrix();
     detectHit();
+
+    // Toon elke seconde de hoogste piekwaarde (voor debugging)
+    int peak = 0;
+    for (int r = 0; r < MATRIX_ROWS; r++)
+      for (int c = 0; c < MATRIX_COLS; c++)
+        if (matrixValues[r][c] > peak) peak = matrixValues[r][c];
+    if (peak > debugMaxPeak) debugMaxPeak = peak;
+
+    unsigned long now = millis();
+    if (now - lastDebugTime >= 1000) {
+      DEBUG_PRINTF(">> Piek: %d (drempel: %d)\n", debugMaxPeak, HIT_THRESHOLD);
+      debugMaxPeak = 0;
+      lastDebugTime = now;
+    }
   }
 }
 
