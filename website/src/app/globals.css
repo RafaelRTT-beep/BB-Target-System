@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-tactical-950 text-white antialiased;
+  }
+
+  ::selection {
+    @apply bg-accent/30;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-accent px-6 py-3 font-semibold text-white transition-all duration-200 hover:bg-accent-dark hover:shadow-lg hover:shadow-accent/25 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-tactical-950;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border-2 border-primary-500 px-6 py-3 font-semibold text-primary-400 transition-all duration-200 hover:bg-primary-500/10 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-tactical-950;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-lg px-6 py-3 font-semibold text-tactical-200 transition-all duration-200 hover:bg-tactical-800 hover:text-white;
+  }
+
+  .section-heading {
+    @apply text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl;
+  }
+
+  .section-subheading {
+    @apply mt-4 max-w-2xl text-lg text-tactical-300;
+  }
+
+  .card {
+    @apply rounded-2xl border border-tactical-800 bg-tactical-900/50 p-6 backdrop-blur-sm transition-all duration-300 hover:border-tactical-700 hover:bg-tactical-900/80;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-400 via-accent to-primary-400 bg-clip-text text-transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
