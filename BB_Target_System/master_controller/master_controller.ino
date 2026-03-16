@@ -39,391 +39,2327 @@
 // Hieronder staat een compact fallback
 
 const char index_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Raf RTT Training System</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#fff;min-height:100vh}
-.container{max-width:1400px;margin:0 auto;padding:20px}
-header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:20px;border-radius:16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
-h1{font-size:2rem;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.status-dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:8px}
-.status-dot.online{background:#00ff88;box-shadow:0 0 10px #00ff88}
-.status-dot.offline{background:#ff4444}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
-.card{background:linear-gradient(145deg,#1a1a2e,#0f0f1a);border-radius:16px;padding:20px;border:1px solid #2a2a4a}
-.card h2{font-size:1.2rem;margin-bottom:15px;color:#00d4ff}
-.targets-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.target{aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;border:2px solid transparent}
-.target.inactive{background:#1a1a2e}
-.target.active{background:#00ff8820;border-color:#00ff88;box-shadow:0 0 20px #00ff8840}
-.target.hit{background:#ff880020;border-color:#ff8800;animation:pulse 0.3s}
-.target.noshoot{background:#ff000020;border-color:#ff0000}
-.target.offline{background:#333;opacity:0.5}
-.target-num{font-size:2rem;font-weight:bold}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
-.timer-display{font-size:4rem;font-weight:bold;text-align:center;font-family:'Courier New',monospace;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.score-display{font-size:3rem;text-align:center;color:#ffd700}
-.btn{padding:12px 24px;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.2s}
-.btn-primary{background:linear-gradient(90deg,#00ff88,#00d4ff);color:#000}
-.btn-danger{background:#ff4444;color:#fff}
-.btn-warning{background:#ff8800;color:#000}
-.btn-secondary{background:#333;color:#fff}
-.btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,255,136,0.3)}
-.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
-.controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:15px 0}
-.mode-select{display:flex;gap:10px;flex-wrap:wrap}
-.mode-btn{flex:1;min-width:120px;padding:15px;border:2px solid #2a2a4a;border-radius:12px;background:transparent;color:#fff;cursor:pointer;transition:all 0.2s}
-.mode-btn.active{border-color:#00ff88;background:#00ff8810}
-.mode-btn:hover{border-color:#00d4ff}
-.highscores{list-style:none}
-.highscores li{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #2a2a4a}
-.highscores li:nth-child(1) .rank{color:#ffd700}
-.highscores li:nth-child(2) .rank{color:#c0c0c0}
-.highscores li:nth-child(3) .rank{color:#cd7f32}
-.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:250px;margin:0 auto}
-.numpad button{padding:20px;font-size:1.5rem;border:none;border-radius:8px;background:#2a2a4a;color:#fff;cursor:pointer}
-.numpad button:hover{background:#3a3a5a}
-.numpad button:active{background:#00ff88;color:#000}
-.settings-group{margin-bottom:15px}
-.settings-group label{display:block;margin-bottom:5px;color:#888}
-.settings-group input,.settings-group select{width:100%;padding:10px;border:1px solid #2a2a4a;border-radius:8px;background:#1a1a2e;color:#fff}
-.log{height:200px;overflow-y:auto;background:#0a0a0f;border-radius:8px;padding:10px;font-family:monospace;font-size:0.85rem}
-.log-entry{padding:2px 0;border-bottom:1px solid #1a1a2e}
-.log-entry.hit{color:#00ff88}
-.log-entry.miss{color:#ff4444}
-.log-entry.info{color:#00d4ff}
-.connection-status{position:fixed;bottom:20px;right:20px;padding:10px 20px;border-radius:8px;font-weight:600}
-.connection-status.connected{background:#00ff8820;color:#00ff88;border:1px solid #00ff88}
-.connection-status.disconnected{background:#ff444420;color:#ff4444;border:1px solid #ff4444}
-@media(max-width:768px){.timer-display{font-size:2.5rem}.score-display{font-size:2rem}.targets-grid{grid-template-columns:repeat(2,1fr)}}
-</style></head>
-<body>
-<div class="container">
-<header>
-<h1>Raf RTT Training System</h1>
-<div><span class="status-dot" id="wsStatus"></span><span id="wsStatusText">Verbinden...</span></div>
-</header>
-
-<div class="grid">
-<!-- Timer & Score -->
-<div class="card">
-<h2>Timer & Score</h2>
-<div class="timer-display" id="timer">00:00.0</div>
-<div class="score-display" id="score">0</div>
-<div class="controls">
-<button class="btn btn-primary" id="btnStart" onclick="startGame()">START</button>
-<button class="btn btn-warning" id="btnPause" onclick="pauseGame()" disabled>PAUZE</button>
-<button class="btn btn-danger" id="btnStop" onclick="stopGame()" disabled>STOP</button>
-<button class="btn btn-secondary" onclick="resetGame()">RESET</button>
-</div>
-<div class="settings-group">
-<label>Speeltijd (seconden)</label>
-<input type="number" id="gameTime" value="60" min="10" max="300">
-</div>
-</div>
-
-<!-- Targets -->
-<div class="card">
-<h2>Targets</h2>
-<div class="targets-grid" id="targetsGrid"></div>
-<p style="text-align:center;margin-top:10px;color:#666" id="targetCount">0/8 targets online</p>
-</div>
-
-<!-- Game Modus -->
-<div class="card">
-<h2>Game Modus</h2>
-<div class="mode-select">
-<button class="mode-btn active" data-mode="freeplay" onclick="setMode('freeplay')">
-<strong>Free Play</strong><br><small>Alles aan</small>
-</button>
-<button class="mode-btn" data-mode="sequence" onclick="setMode('sequence')">
-<strong>Sequence</strong><br><small>Volgorde</small>
-</button>
-<button class="mode-btn" data-mode="random" onclick="setMode('random')">
-<strong>Random</strong><br><small>Willekeurig</small>
-</button>
-<button class="mode-btn" data-mode="shootnoshoot" onclick="setMode('shootnoshoot')">
-<strong>Shoot/No Shoot</strong><br><small>Groen vs Rood</small>
-</button>
-</div>
-<div class="settings-group" style="margin-top:15px">
-<label>Target tijd (seconden) - voor Sequence/Random</label>
-<input type="number" id="targetTime" value="3" min="1" max="10">
-</div>
-</div>
-
-<!-- Numpad -->
-<div class="card">
-<h2>Handmatig Target</h2>
-<div class="numpad">
-<button onclick="activateTarget(1)">1</button>
-<button onclick="activateTarget(2)">2</button>
-<button onclick="activateTarget(3)">3</button>
-<button onclick="activateTarget(4)">4</button>
-<button onclick="activateTarget(5)">5</button>
-<button onclick="activateTarget(6)">6</button>
-<button onclick="activateTarget(7)">7</button>
-<button onclick="activateTarget(8)">8</button>
-<button onclick="activateAll()">ALL</button>
-</div>
-</div>
-
-<!-- Highscores -->
-<div class="card">
-<h2>Top 3 van Vandaag</h2>
-<ol class="highscores" id="highscores">
-<li><span class="rank">#1</span><span>---</span><span>0</span></li>
-<li><span class="rank">#2</span><span>---</span><span>0</span></li>
-<li><span class="rank">#3</span><span>---</span><span>0</span></li>
-</ol>
-<div class="controls">
-<button class="btn btn-secondary" onclick="loadHighscores()">Vernieuwen</button>
-<button class="btn btn-danger" onclick="clearHighscores()">Wissen</button>
-</div>
-<div class="settings-group" style="margin-top:15px">
-<label>Speler naam</label>
-<input type="text" id="playerName" placeholder="Naam" maxlength="20">
-</div>
-</div>
-
-<!-- Event Log -->
-<div class="card">
-<h2>Event Log</h2>
-<div class="log" id="log"></div>
-<button class="btn btn-secondary" onclick="clearLog()" style="margin-top:10px">Log Wissen</button>
-</div>
-</div>
-</div>
-
-<div class="connection-status disconnected" id="connectionStatus">Niet verbonden</div>
-
-<script>
-let ws;
-let gameState = {running:false,paused:false,mode:'freeplay',score:0,time:0,targets:{}};
-const maxTargets = 8;
-
-// WebSocket verbinding
-function connect() {
-    ws = new WebSocket('ws://'+location.hostname+':81/ws');
-    ws.onopen = () => {
-        document.getElementById('wsStatus').className = 'status-dot online';
-        document.getElementById('wsStatusText').textContent = 'Verbonden';
-        document.getElementById('connectionStatus').className = 'connection-status connected';
-        document.getElementById('connectionStatus').textContent = 'Verbonden';
-        log('Verbonden met master controller', 'info');
-        ws.send(JSON.stringify({cmd:'getState'}));
-    };
-    ws.onclose = () => {
-        document.getElementById('wsStatus').className = 'status-dot offline';
-        document.getElementById('wsStatusText').textContent = 'Niet verbonden';
-        document.getElementById('connectionStatus').className = 'connection-status disconnected';
-        document.getElementById('connectionStatus').textContent = 'Niet verbonden';
-        log('Verbinding verbroken, opnieuw verbinden...', 'miss');
-        setTimeout(connect, 2000);
-    };
-    ws.onmessage = (e) => {
-        try {
-            const data = JSON.parse(e.data);
-            handleMessage(data);
-        } catch(err) { console.error('Parse error:', err); }
-    };
-    ws.onerror = (e) => console.error('WebSocket error:', e);
-}
-
-function handleMessage(data) {
-    switch(data.event) {
-        case 'state':
-            gameState = {...gameState, ...data.data};
-            updateUI();
-            break;
-        case 'hit':
-            handleHit(data.data);
-            break;
-        case 'timer':
-            document.getElementById('timer').textContent = formatTime(data.data.time);
-            gameState.time = data.data.time;
-            break;
-        case 'score':
-            document.getElementById('score').textContent = data.data.score;
-            gameState.score = data.data.score;
-            break;
-        case 'targetUpdate':
-            updateTarget(data.data);
-            break;
-        case 'gameEnd':
-            gameEnded(data.data);
-            break;
-        case 'highscores':
-            displayHighscores(data.data);
-            break;
-    }
-}
-
-function handleHit(data) {
-    const target = document.querySelector(`[data-target="${data.target}"]`);
-    if (target) {
-        target.classList.add('hit');
-        setTimeout(() => target.classList.remove('hit'), 300);
-    }
-    log(`Target ${data.target} geraakt! +${data.points} punten`, data.points > 0 ? 'hit' : 'miss');
-    document.getElementById('score').textContent = data.totalScore;
-}
-
-function updateTarget(data) {
-    const target = document.querySelector(`[data-target="${data.id}"]`);
-    if (target) {
-        target.className = 'target ' + data.state;
-        if (data.color) {
-            target.style.setProperty('--target-color', `rgb(${data.color.r},${data.color.g},${data.color.b})`);
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Raf RTT Training System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff88;
+            --primary-dark: #00cc6a;
+            --secondary: #00d4ff;
+            --danger: #ff4444;
+            --warning: #ff8800;
+            --success: #00ff88;
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a25;
+            --border: #2a2a3a;
+            --text: #ffffff;
+            --text-muted: #888899;
+            --gold: #ffd700;
+            --silver: #c0c0c0;
+            --bronze: #cd7f32;
         }
-    }
-    gameState.targets[data.id] = data;
-    updateTargetCount();
-}
 
-function updateTargetCount() {
-    const online = Object.values(gameState.targets).filter(t => t.state !== 'offline').length;
-    document.getElementById('targetCount').textContent = `${online}/${maxTargets} targets online`;
-}
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-function updateUI() {
-    // Buttons
-    document.getElementById('btnStart').disabled = gameState.running;
-    document.getElementById('btnPause').disabled = !gameState.running;
-    document.getElementById('btnStop').disabled = !gameState.running;
-    document.getElementById('btnPause').textContent = gameState.paused ? 'HERVAT' : 'PAUZE';
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
 
-    // Mode buttons
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === gameState.mode);
-    });
+        /* TV Mode Styles */
+        body.tv-mode {
+            font-size: 1.3em;
+        }
 
-    // Timer & Score
-    document.getElementById('timer').textContent = formatTime(gameState.time);
-    document.getElementById('score').textContent = gameState.score;
+        body.tv-mode .container {
+            max-width: 100%;
+            padding: 40px;
+        }
 
-    // Targets
-    initTargets();
-}
+        body.tv-mode .timer-value {
+            font-size: 8rem;
+        }
 
-function initTargets() {
-    const grid = document.getElementById('targetsGrid');
-    grid.innerHTML = '';
-    for (let i = 1; i <= maxTargets; i++) {
-        const target = document.createElement('div');
-        target.className = 'target ' + (gameState.targets[i]?.state || 'offline');
-        target.dataset.target = i;
-        target.innerHTML = `<span class="target-num">${i}</span>`;
-        target.onclick = () => activateTarget(i);
-        grid.appendChild(target);
-    }
-}
+        body.tv-mode .score-value {
+            font-size: 6rem;
+        }
 
-function formatTime(ms) {
-    const totalSec = Math.floor(ms / 1000);
-    const min = Math.floor(totalSec / 60);
-    const sec = totalSec % 60;
-    const tenths = Math.floor((ms % 1000) / 100);
-    return `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}.${tenths}`;
-}
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 15px;
+        }
 
-function send(data) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(data));
-    }
-}
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 20px 25px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
 
-function startGame() {
-    const playerName = document.getElementById('playerName').value || 'Speler';
-    const gameTime = parseInt(document.getElementById('gameTime').value) || 60;
-    const targetTime = parseInt(document.getElementById('targetTime').value) || 3;
-    send({cmd:'start', player: playerName, gameTime: gameTime, targetTime: targetTime});
-    log(`Game gestart - ${gameState.mode} mode`, 'info');
-}
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-function pauseGame() {
-    send({cmd:'pause'});
-    log(gameState.paused ? 'Game hervat' : 'Game gepauzeerd', 'info');
-}
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
 
-function stopGame() {
-    send({cmd:'stop'});
-    log('Game gestopt', 'info');
-}
+        h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+        }
 
-function resetGame() {
-    send({cmd:'reset'});
-    log('Game gereset', 'info');
-}
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-function setMode(mode) {
-    send({cmd:'setMode', mode: mode});
-    gameState.mode = mode;
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === mode);
-    });
-    log(`Modus: ${mode}`, 'info');
-}
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 50px;
+        }
 
-function activateTarget(id) {
-    send({cmd:'activateTarget', target: id});
-}
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--danger);
+            transition: all 0.3s;
+        }
 
-function activateAll() {
-    send({cmd:'activateAll'});
-}
+        .status-dot.online {
+            background: var(--success);
+            box-shadow: 0 0 15px var(--success);
+            animation: pulse-glow 2s infinite;
+        }
 
-function loadHighscores() {
-    send({cmd:'getHighscores'});
-}
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px var(--success); }
+            50% { box-shadow: 0 0 25px var(--success); }
+        }
 
-function clearHighscores() {
-    if (confirm('Weet je zeker dat je alle highscores wilt wissen?')) {
-        send({cmd:'clearHighscores'});
-        log('Highscores gewist', 'info');
-    }
-}
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+        }
 
-function displayHighscores(scores) {
-    const list = document.getElementById('highscores');
-    list.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
-        const s = scores[i] || {name: '---', score: 0};
-        const li = document.createElement('li');
-        li.innerHTML = `<span class="rank">#${i+1}</span><span>${s.name}</span><span>${s.score}</span>`;
-        list.appendChild(li);
-    }
-}
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
 
-function gameEnded(data) {
-    log(`Game afgelopen! Score: ${data.score}`, 'info');
-    if (data.isHighscore) {
-        log('NIEUWE HIGHSCORE!', 'hit');
-    }
-    loadHighscores();
-}
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
 
-function log(msg, type = '') {
-    const logDiv = document.getElementById('log');
-    const entry = document.createElement('div');
-    entry.className = 'log-entry ' + type;
-    const time = new Date().toLocaleTimeString();
-    entry.textContent = `[${time}] ${msg}`;
-    logDiv.insertBefore(entry, logDiv.firstChild);
-    if (logDiv.children.length > 100) logDiv.lastChild.remove();
-}
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
 
-function clearLog() {
-    document.getElementById('log').innerHTML = '';
-}
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.1);
+        }
 
-// Init
-connect();
-initTargets();
-loadHighscores();
-</script>
-</body></html>
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            color: var(--secondary);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Timer & Score Display */
+        .timer-score-card {
+            background: linear-gradient(145deg, #12121a, #0a0a0f);
+            text-align: center;
+        }
+
+        .timer-container {
+            margin-bottom: 30px;
+        }
+
+        .timer-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .timer-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 4.5rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 60px rgba(0, 255, 136, 0.5);
+            line-height: 1;
+        }
+
+        .timer-value.warning {
+            background: linear-gradient(90deg, var(--warning), var(--danger));
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .score-container {
+            margin-bottom: 30px;
+        }
+
+        .score-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .score-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 4rem;
+            font-weight: 900;
+            color: var(--gold);
+            text-shadow: 0 0 40px rgba(255, 215, 0, 0.5);
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 25px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-value.hits { color: var(--success); }
+        .stat-value.misses { color: var(--danger); }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+            min-width: 140px;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, var(--warning), #cc6600);
+            color: #000;
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, var(--danger), #cc0000);
+            color: #fff;
+        }
+
+        .btn-reset {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Targets Grid */
+        .targets-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        @media (max-width: 500px) {
+            .targets-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .target {
+            aspect-ratio: 1;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 3px solid transparent;
+            background: linear-gradient(145deg, #1a1a2e, #12121a);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .target::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.3));
+            pointer-events: none;
+        }
+
+        .target-num {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: 900;
+            position: relative;
+            z-index: 1;
+        }
+
+        .target-status {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .target.offline {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .target.offline .target-status {
+            color: var(--danger);
+        }
+
+        .target.inactive {
+            border-color: var(--border);
+        }
+
+        .target.inactive .target-num {
+            color: var(--text-muted);
+        }
+
+        .target.active {
+            border-color: var(--success);
+            background: linear-gradient(145deg, rgba(0, 255, 136, 0.15), rgba(0, 255, 136, 0.05));
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3), inset 0 0 30px rgba(0, 255, 136, 0.1);
+            animation: target-pulse 1s infinite;
+        }
+
+        .target.active .target-num {
+            color: var(--success);
+            text-shadow: 0 0 20px var(--success);
+        }
+
+        @keyframes target-pulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(0, 255, 136, 0.3), inset 0 0 30px rgba(0, 255, 136, 0.1); }
+            50% { box-shadow: 0 0 50px rgba(0, 255, 136, 0.5), inset 0 0 40px rgba(0, 255, 136, 0.2); }
+        }
+
+        .target.hit {
+            border-color: var(--warning);
+            background: linear-gradient(145deg, rgba(255, 136, 0, 0.3), rgba(255, 136, 0, 0.1));
+            animation: hit-flash 0.3s ease-out;
+        }
+
+        @keyframes hit-flash {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); background: rgba(255, 200, 0, 0.4); }
+            100% { transform: scale(1); }
+        }
+
+        .target.noshoot {
+            border-color: var(--danger);
+            background: linear-gradient(145deg, rgba(255, 68, 68, 0.15), rgba(255, 68, 68, 0.05));
+            box-shadow: 0 0 30px rgba(255, 68, 68, 0.3);
+        }
+
+        .target.noshoot .target-num {
+            color: var(--danger);
+        }
+
+        .target-count {
+            text-align: center;
+            margin-top: 15px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Game Modes */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .mode-btn {
+            padding: 20px 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--secondary);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .mode-btn.active {
+            border-color: var(--primary);
+            background: rgba(0, 255, 136, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .mode-btn strong {
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .mode-btn small {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        /* Numpad */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .numpad-btn {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 12px;
+            background: var(--border);
+            color: var(--text);
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .numpad-btn:hover {
+            background: var(--primary);
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        .numpad-btn:active {
+            transform: scale(0.95);
+        }
+
+        .numpad-btn.all {
+            font-size: 1rem;
+            background: linear-gradient(135deg, var(--secondary), #0099cc);
+        }
+
+        /* Highscores */
+        .highscores-list {
+            list-style: none;
+        }
+
+        .highscore-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+            gap: 15px;
+        }
+
+        .highscore-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 900;
+            width: 50px;
+        }
+
+        .rank-1 { color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+        .rank-2 { color: var(--silver); }
+        .rank-3 { color: var(--bronze); }
+
+        .highscore-name {
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .highscore-score {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        /* Settings */
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .settings-group input,
+        .settings-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-dark);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .settings-group input:focus,
+        .settings-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+
+        /* Event Log */
+        .log-container {
+            height: 250px;
+            overflow-y: auto;
+            background: var(--bg-dark);
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            gap: 10px;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .log-entry.hit { color: var(--success); }
+        .log-entry.miss { color: var(--danger); }
+        .log-entry.info { color: var(--secondary); }
+
+        /* Connection Status Toast */
+        .connection-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 1000;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .connection-toast.connected {
+            background: rgba(0, 255, 136, 0.15);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .connection-toast.disconnected {
+            background: rgba(255, 68, 68, 0.15);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        /* TV Mode Button */
+        .tv-mode-btn {
+            background: var(--border);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .tv-mode-btn:hover {
+            background: var(--primary);
+            color: #000;
+        }
+
+        /* Game Status Overlay */
+        .game-status {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px 80px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 1000;
+            border: 2px solid var(--primary);
+            display: none;
+        }
+
+        .game-status.show {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .game-status h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .game-status .final-score {
+            font-family: 'Orbitron', monospace;
+            font-size: 4rem;
+            color: var(--gold);
+            margin-bottom: 30px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* ============================================================
+           TAB NAVIGATION
+           ============================================================ */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 5px;
+            border: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px 20px;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ============================================================
+           FITNESS COUNTER STYLES
+           ============================================================ */
+        .fitness-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .fitness-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .counter-display {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .count-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+
+        .count-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .round-display {
+            text-align: center;
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .round-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .round-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .led-strip-visual {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 30px;
+        }
+
+        .led-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #1a1a2e;
+            border: 2px solid #2a2a3a;
+            transition: all 0.3s ease;
+        }
+
+        .led-dot.on {
+            border-color: transparent;
+            box-shadow: 0 0 15px currentColor, 0 0 30px currentColor;
+        }
+
+        .led-dot.flash {
+            animation: ledFlash 0.3s ease-out;
+        }
+
+        @keyframes ledFlash {
+            0% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+
+        .red-timer-display {
+            text-align: center;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .red-timer-display.active {
+            display: block;
+        }
+
+        .red-timer-bar {
+            height: 8px;
+            background: #2a2a3a;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .red-timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--danger), #ff6666);
+            border-radius: 4px;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        .red-timer-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            color: var(--danger);
+            text-shadow: 0 0 20px var(--danger);
+        }
+
+        .red-timer-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .fitness-progress {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .progress-ring {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+        }
+
+        .progress-bg { stroke: #2a2a3a; }
+
+        .progress-fill {
+            stroke: var(--primary);
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.3s ease;
+            filter: drop-shadow(0 0 6px var(--primary));
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .fitness-setting-group {
+            margin-bottom: 16px;
+        }
+
+        .fitness-setting-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .fitness-setting-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fitness-setting-input {
+            flex: 1;
+            background: var(--bg-dark);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .fitness-setting-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+        }
+
+        .fitness-adj-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-dark);
+            color: var(--text);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .fitness-adj-btn:hover {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+
+        .fitness-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .fitness-btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .fitness-btn-full {
+            grid-column: 1 / -1;
+        }
+
+        .fitness-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .fitness-stat-item {
+            text-align: center;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+
+        .fitness-stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .fitness-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .fitness-mode-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .fitness-mode-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-dark);
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .fitness-mode-btn.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .fitness-log {
+            max-height: 180px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .fitness-log .log-entry.detection { color: var(--primary); }
+        .fitness-log .log-entry.led { color: var(--gold); }
+        .fitness-log .log-entry.full { color: var(--warning); font-weight: bold; }
+        .fitness-log .log-entry.round { color: var(--secondary); font-weight: bold; }
+        .fitness-log .log-entry.timeout { color: var(--danger); }
+
+        @media (max-width: 480px) {
+            .count-value { font-size: 3.5rem; }
+            .led-dot { width: 32px; height: 32px; }
+            .fitness-stats-grid { grid-template-columns: 1fr 1fr; }
+            .fitness-btn-grid { grid-template-columns: 1fr; }
+            .fitness-btn-full { grid-column: 1; }
+            .tab-btn { font-size: 0.75rem; padding: 12px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🎯</div>
+                <h1>RAF RTT TRAINING</h1>
+            </div>
+            <div class="header-controls">
+                <a href="/running_test.html" style="text-decoration:none;padding:8px 16px;border:1px solid #2a2a3a;border-radius:10px;color:#00d4ff;font-weight:600;font-size:0.85rem;transition:all 0.3s;">Hardloop Test</a>
+                <button class="tv-mode-btn" onclick="toggleTVMode()">📺 TV Mode</button>
+                <div class="status-indicator">
+                    <span class="status-dot" id="wsStatus"></span>
+                    <span id="wsStatusText">Verbinden...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('schieten')">Schieten</button>
+            <button class="tab-btn" onclick="switchTab('fitness')">Fitness Training</button>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: SCHIETEN -->
+        <!-- ============================================================ -->
+        <div class="tab-content active" id="tab-schieten">
+        <div class="main-grid">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Game Mode -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Game Modus</h2>
+                    </div>
+                    <div class="mode-grid">
+                        <button class="mode-btn active" data-mode="freeplay" onclick="setMode('freeplay')">
+                            <strong>🎯 Free Play</strong>
+                            <small>Alles aan</small>
+                        </button>
+                        <button class="mode-btn" data-mode="sequence" onclick="setMode('sequence')">
+                            <strong>🔢 Sequence</strong>
+                            <small>Volgorde</small>
+                        </button>
+                        <button class="mode-btn" data-mode="random" onclick="setMode('random')">
+                            <strong>🎲 Random</strong>
+                            <small>Willekeurig</small>
+                        </button>
+                        <button class="mode-btn" data-mode="shootnoshoot" onclick="setMode('shootnoshoot')">
+                            <strong>🚦 Shoot/No</strong>
+                            <small>Groen vs Rood</small>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header">
+                        <h2>Instellingen</h2>
+                    </div>
+                    <div class="settings-group">
+                        <label>Speler Naam</label>
+                        <input type="text" id="playerName" placeholder="Naam" maxlength="20" value="Speler">
+                    </div>
+                    <div class="settings-group">
+                        <label>Speeltijd (seconden)</label>
+                        <input type="number" id="gameTime" value="60" min="10" max="300">
+                    </div>
+                    <div class="settings-group">
+                        <label>Target tijd (sec) - Sequence/Random</label>
+                        <input type="number" id="targetTime" value="3" min="1" max="10">
+                    </div>
+                </div>
+
+                <!-- Numpad -->
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header">
+                        <h2>Handmatig</h2>
+                    </div>
+                    <div class="numpad">
+                        <button class="numpad-btn" onclick="activateTarget(1)">1</button>
+                        <button class="numpad-btn" onclick="activateTarget(2)">2</button>
+                        <button class="numpad-btn" onclick="activateTarget(3)">3</button>
+                        <button class="numpad-btn" onclick="activateTarget(4)">4</button>
+                        <button class="numpad-btn" onclick="activateTarget(5)">5</button>
+                        <button class="numpad-btn" onclick="activateTarget(6)">6</button>
+                        <button class="numpad-btn" onclick="activateTarget(7)">7</button>
+                        <button class="numpad-btn" onclick="activateTarget(8)">8</button>
+                        <button class="numpad-btn all" onclick="activateAll()">ALL</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Column - Timer, Score, Targets -->
+            <div class="center-column">
+                <!-- Timer & Score -->
+                <div class="card timer-score-card">
+                    <div class="timer-container">
+                        <div class="timer-label">Tijd</div>
+                        <div class="timer-value" id="timer">00:00.0</div>
+                    </div>
+                    <div class="score-container">
+                        <div class="score-label">Score</div>
+                        <div class="score-value" id="score">0</div>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <div class="stat-value hits" id="hits">0</div>
+                            <div class="stat-label">Hits</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value misses" id="misses">0</div>
+                            <div class="stat-label">Misses</div>
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <button class="btn btn-start" id="btnStart" onclick="startGame()">
+                            ▶ START
+                        </button>
+                        <button class="btn btn-pause" id="btnPause" onclick="pauseGame()" disabled>
+                            ⏸ PAUZE
+                        </button>
+                        <button class="btn btn-stop" id="btnStop" onclick="stopGame()" disabled>
+                            ⏹ STOP
+                        </button>
+                        <button class="btn btn-reset" onclick="resetGame()">
+                            ↺ RESET
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Targets -->
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header">
+                        <h2>Targets</h2>
+                    </div>
+                    <div class="targets-grid" id="targetsGrid">
+                        <!-- Generated by JS -->
+                    </div>
+                    <div class="target-count" id="targetCount">0/8 targets online</div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- Highscores -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>🏆 Top 3 van Vandaag</h2>
+                    </div>
+                    <ul class="highscores-list" id="highscores">
+                        <li class="highscore-item">
+                            <span class="rank rank-1">#1</span>
+                            <span class="highscore-name">---</span>
+                            <span class="highscore-score">0</span>
+                        </li>
+                        <li class="highscore-item">
+                            <span class="rank rank-2">#2</span>
+                            <span class="highscore-name">---</span>
+                            <span class="highscore-score">0</span>
+                        </li>
+                        <li class="highscore-item">
+                            <span class="rank rank-3">#3</span>
+                            <span class="highscore-name">---</span>
+                            <span class="highscore-score">0</span>
+                        </li>
+                    </ul>
+                    <div class="controls" style="margin-top: 15px;">
+                        <button class="btn btn-reset" onclick="loadHighscores()" style="padding: 10px 20px;">
+                            Vernieuwen
+                        </button>
+                        <button class="btn btn-stop" onclick="clearHighscores()" style="padding: 10px 20px;">
+                            Wissen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Event Log -->
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header">
+                        <h2>📋 Event Log</h2>
+                        <button class="btn btn-reset" onclick="clearLog()" style="padding: 8px 15px; font-size: 0.8rem;">
+                            Wissen
+                        </button>
+                    </div>
+                    <div class="log-container" id="log">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div><!-- /tab-schieten -->
+
+        <!-- ============================================================ -->
+        <!-- TAB: FITNESS TRAINING -->
+        <!-- ============================================================ -->
+        <div class="tab-content" id="tab-fitness">
+            <div class="fitness-grid">
+                <!-- Counter Display -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Ultrasonic Counter</h2>
+                    </div>
+                    <div class="counter-display">
+                        <div class="count-value" id="fitCountValue">0</div>
+                        <div class="count-label">detecties</div>
+                    </div>
+
+                    <div class="round-display">
+                        <div class="round-label">Ronde</div>
+                        <div class="round-value"><span id="fitCurrentRound">0</span> / <span id="fitTotalRounds">--</span></div>
+                    </div>
+
+                    <!-- Red Timer -->
+                    <div class="red-timer-display" id="fitRedTimerDisplay">
+                        <div class="red-timer-text" id="fitRedTimerText">0.0</div>
+                        <div class="red-timer-bar">
+                            <div class="red-timer-fill" id="fitRedTimerFill" style="width: 100%"></div>
+                        </div>
+                        <div class="red-timer-label">Tijd om bij sensor te komen!</div>
+                    </div>
+
+                    <!-- LED Strip -->
+                    <div class="led-strip-visual" id="fitLedStrip"></div>
+
+                    <!-- Progress Ring -->
+                    <div class="fitness-progress">
+                        <div class="progress-ring">
+                            <svg width="100" height="100">
+                                <circle class="progress-bg" cx="50" cy="50" r="42"></circle>
+                                <circle class="progress-fill" id="fitProgressCircle" cx="50" cy="50" r="42"
+                                        stroke-dasharray="263.89" stroke-dashoffset="263.89"></circle>
+                            </svg>
+                            <div class="progress-text"><span id="fitProgressCount">0</span>/<span id="fitProgressTotal">1</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Fitness Stats -->
+                    <div class="fitness-stats-grid">
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatTotal">0</div>
+                            <div class="fitness-stat-label">Totaal</div>
+                        </div>
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatLeds">0/6</div>
+                            <div class="fitness-stat-label">LEDs Aan</div>
+                        </div>
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatRounds">0</div>
+                            <div class="fitness-stat-label">Rondes</div>
+                        </div>
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatSpeed">--</div>
+                            <div class="fitness-stat-label">Gem. Snelheid</div>
+                        </div>
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatTimeouts">0</div>
+                            <div class="fitness-stat-label">Timeouts</div>
+                        </div>
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatDistance">--</div>
+                            <div class="fitness-stat-label">Afstand (cm)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings & Controls -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Instellingen</h2>
+                    </div>
+
+                    <!-- Training Mode -->
+                    <div class="fitness-mode-selector">
+                        <button class="fitness-mode-btn active" data-fitmode="free" onclick="setFitnessMode('free')">Vrij Tellen</button>
+                        <button class="fitness-mode-btn" data-fitmode="timed" onclick="setFitnessMode('timed')">Timed</button>
+                        <button class="fitness-mode-btn" data-fitmode="interval" onclick="setFitnessMode('interval')">Interval</button>
+                    </div>
+
+                    <div class="fitness-setting-group">
+                        <label class="fitness-setting-label">Detecties per LED</label>
+                        <div class="fitness-setting-row">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitCountsPerLed', -1)">-</button>
+                            <input type="number" class="fitness-setting-input" id="fitCountsPerLed" value="1" min="1" max="100" onchange="applyFit('fitCountsPerLed')">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitCountsPerLed', 1)">+</button>
+                        </div>
+                        <div class="fitness-hint">Na hoeveel keer hand over sensor = 1 LED aan</div>
+                    </div>
+
+                    <div class="fitness-setting-group">
+                        <label class="fitness-setting-label">Rode LED timer (seconden)</label>
+                        <div class="fitness-setting-row">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitRedTimer', -1)">-</button>
+                            <input type="number" class="fitness-setting-input" id="fitRedTimer" value="0" min="0" max="60" onchange="applyFit('fitRedTimer')">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitRedTimer', 1)">+</button>
+                        </div>
+                        <div class="fitness-hint">0 = uit. LED brandt rood, wordt groen als je op tijd bent</div>
+                    </div>
+
+                    <div class="fitness-setting-group">
+                        <label class="fitness-setting-label">Aantal rondes</label>
+                        <div class="fitness-setting-row">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitRounds', -1)">-</button>
+                            <input type="number" class="fitness-setting-input" id="fitRounds" value="0" min="0" max="99" onchange="applyFit('fitRounds')">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitRounds', 1)">+</button>
+                        </div>
+                        <div class="fitness-hint">0 = oneindig. 6 LEDs vol = 1 ronde</div>
+                    </div>
+
+                    <div class="fitness-setting-group">
+                        <label class="fitness-setting-label">Detectie afstand (cm)</label>
+                        <div class="fitness-setting-row">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitDistance', -5)">-</button>
+                            <input type="number" class="fitness-setting-input" id="fitDistance" value="20" min="5" max="100" onchange="applyFit('fitDistance')">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitDistance', 5)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="fitness-btn-grid">
+                        <button class="btn btn-start" id="fitBtnStart" onclick="startFitness()">START</button>
+                        <button class="btn btn-stop" id="fitBtnStop" onclick="stopFitness()">STOP</button>
+                        <button class="btn btn-pause fitness-btn-full" onclick="resetFitness()">RESET TELLER</button>
+                    </div>
+
+                    <!-- Fitness Log -->
+                    <div style="margin-top: 20px;">
+                        <div class="card-header" style="margin-bottom: 10px;">
+                            <h2>Log</h2>
+                            <button class="btn btn-reset" onclick="clearFitnessLog()" style="padding: 6px 12px; font-size: 0.75rem;">Wis</button>
+                        </div>
+                        <div class="fitness-log" id="fitnessLog"></div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /tab-fitness -->
+
+    </div>
+
+    <!-- Connection Toast -->
+    <div class="connection-toast disconnected" id="connectionToast">
+        <span class="status-dot"></span>
+        <span id="connectionText">Niet verbonden</span>
+    </div>
+
+    <!-- Game End Overlay -->
+    <div class="game-status" id="gameStatus">
+        <h2>GAME OVER</h2>
+        <div class="final-score" id="finalScore">0</div>
+        <p id="highscoreMsg" style="color: var(--gold); margin-bottom: 20px; display: none;">
+            🏆 NIEUWE HIGHSCORE! 🏆
+        </p>
+        <button class="btn btn-start" onclick="closeGameStatus()">OK</button>
+    </div>
+
+    <script>
+        // ============================================================
+        // RAF RTT TRAINING SYSTEM - WEBINTERFACE
+        // ============================================================
+
+        let ws;
+        const MAX_TARGETS = 8;
+        const FIT_NUM_LEDS = 6;
+
+        let gameState = {
+            running: false,
+            paused: false,
+            mode: 'freeplay',
+            score: 0,
+            hits: 0,
+            misses: 0,
+            time: 0,
+            targets: {}
+        };
+
+        // Initialize targets
+        for (let i = 1; i <= MAX_TARGETS; i++) {
+            gameState.targets[i] = { online: false, state: 'offline' };
+        }
+
+        // ============================================================
+        // WEBSOCKET
+        // ============================================================
+
+        function connect() {
+            const host = location.hostname || '192.168.4.1';
+            ws = new WebSocket(`ws://${host}:81/ws`);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                updateConnectionStatus(true);
+                log('Verbonden met master controller', 'info');
+                ws.send(JSON.stringify({ cmd: 'getState' }));
+                loadHighscores();
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                updateConnectionStatus(false);
+                log('Verbinding verbroken...', 'miss');
+                setTimeout(connect, 2000);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleMessage(data);
+                } catch (err) {
+                    console.error('Parse error:', err);
+                }
+            };
+
+            ws.onerror = (err) => {
+                console.error('WebSocket error:', err);
+            };
+        }
+
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('wsStatus');
+            const text = document.getElementById('wsStatusText');
+            const toast = document.getElementById('connectionToast');
+            const toastText = document.getElementById('connectionText');
+
+            if (connected) {
+                dot.classList.add('online');
+                text.textContent = 'Verbonden';
+                toast.className = 'connection-toast connected';
+                toastText.textContent = 'Verbonden';
+            } else {
+                dot.classList.remove('online');
+                text.textContent = 'Niet verbonden';
+                toast.className = 'connection-toast disconnected';
+                toastText.textContent = 'Niet verbonden';
+            }
+        }
+
+        function send(data) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(data));
+            }
+        }
+
+        // ============================================================
+        // MESSAGE HANDLERS
+        // ============================================================
+
+        function handleMessage(data) {
+            switch (data.event) {
+                case 'state':
+                    handleState(data.data);
+                    break;
+                case 'hit':
+                    handleHit(data.data);
+                    break;
+                case 'timer':
+                    handleTimer(data.data);
+                    break;
+                case 'score':
+                    document.getElementById('score').textContent = data.data.score;
+                    gameState.score = data.data.score;
+                    break;
+                case 'targetUpdate':
+                    handleTargetUpdate(data.data);
+                    break;
+                case 'gameEnd':
+                    handleGameEnd(data.data);
+                    break;
+                case 'highscores':
+                    displayHighscores(data.data);
+                    break;
+                // Fitness counter events
+                case 'counterUpdate':
+                    handleFitnessUpdate(data.data);
+                    break;
+                case 'counterDetection':
+                    handleFitnessDetection(data.data);
+                    break;
+                case 'counterFull':
+                    handleFitnessFull(data.data);
+                    break;
+                case 'counterReset':
+                    handleFitnessReset(data.data);
+                    break;
+                case 'counterTimeout':
+                    handleFitnessTimeout(data.data);
+                    break;
+            }
+        }
+
+        function handleState(data) {
+            gameState = { ...gameState, ...data };
+
+            // Update UI
+            document.getElementById('btnStart').disabled = gameState.running;
+            document.getElementById('btnPause').disabled = !gameState.running;
+            document.getElementById('btnStop').disabled = !gameState.running;
+            document.getElementById('btnPause').innerHTML = gameState.paused ? '▶ HERVAT' : '⏸ PAUZE';
+
+            // Mode buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === gameState.mode);
+            });
+
+            // Timer & Score
+            document.getElementById('timer').textContent = formatTime(gameState.time);
+            document.getElementById('score').textContent = gameState.score;
+
+            // Update targets from state
+            if (data.targets) {
+                Object.keys(data.targets).forEach(id => {
+                    gameState.targets[id] = data.targets[id];
+                });
+                updateTargetsUI();
+            }
+        }
+
+        function handleHit(data) {
+            const target = document.querySelector(`[data-target="${data.target}"]`);
+            if (target) {
+                target.classList.add('hit');
+                setTimeout(() => target.classList.remove('hit'), 300);
+            }
+
+            document.getElementById('score').textContent = data.totalScore;
+            gameState.score = data.totalScore;
+
+            if (data.points > 0) {
+                gameState.hits++;
+                document.getElementById('hits').textContent = gameState.hits;
+                log(`Target ${data.target} geraakt! +${data.points} punten`, 'hit');
+            } else if (data.points < 0) {
+                gameState.misses++;
+                document.getElementById('misses').textContent = gameState.misses;
+                log(`Target ${data.target} - ${data.points} punten`, 'miss');
+            }
+        }
+
+        function handleTimer(data) {
+            document.getElementById('timer').textContent = formatTime(data.time);
+            gameState.time = data.time;
+
+            // Warning color when < 10 seconds remaining
+            const remaining = data.remaining || 0;
+            const timerEl = document.getElementById('timer');
+            if (remaining < 10000 && remaining > 0) {
+                timerEl.classList.add('warning');
+            } else {
+                timerEl.classList.remove('warning');
+            }
+        }
+
+        function handleTargetUpdate(data) {
+            gameState.targets[data.id] = data;
+            updateTargetUI(data.id);
+            updateTargetCount();
+        }
+
+        function handleGameEnd(data) {
+            gameState.running = false;
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnPause').disabled = true;
+            document.getElementById('btnStop').disabled = true;
+
+            // Show overlay
+            document.getElementById('finalScore').textContent = data.score;
+            document.getElementById('highscoreMsg').style.display = data.isHighscore ? 'block' : 'none';
+            document.getElementById('gameStatus').classList.add('show');
+
+            log(`Game afgelopen! Score: ${data.score} | Hits: ${data.hits} | Misses: ${data.misses}`, 'info');
+
+            loadHighscores();
+        }
+
+        // ============================================================
+        // UI FUNCTIONS
+        // ============================================================
+
+        function initTargets() {
+            const grid = document.getElementById('targetsGrid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= MAX_TARGETS; i++) {
+                const target = document.createElement('div');
+                target.className = 'target offline';
+                target.dataset.target = i;
+                target.innerHTML = `
+                    <span class="target-num">${i}</span>
+                    <span class="target-status">OFFLINE</span>
+                `;
+                target.onclick = () => activateTarget(i);
+                grid.appendChild(target);
+            }
+        }
+
+        function updateTargetsUI() {
+            for (let i = 1; i <= MAX_TARGETS; i++) {
+                updateTargetUI(i);
+            }
+            updateTargetCount();
+        }
+
+        function updateTargetUI(id) {
+            const target = document.querySelector(`[data-target="${id}"]`);
+            if (!target) return;
+
+            const data = gameState.targets[id];
+            const status = target.querySelector('.target-status');
+
+            // Remove all state classes
+            target.className = 'target';
+
+            if (!data || !data.online) {
+                target.classList.add('offline');
+                status.textContent = 'OFFLINE';
+            } else {
+                switch (data.state) {
+                    case 'active':
+                        target.classList.add('active');
+                        status.textContent = 'ACTIVE';
+                        break;
+                    case 'noshoot':
+                        target.classList.add('noshoot');
+                        status.textContent = 'NO SHOOT';
+                        break;
+                    case 'hit':
+                        target.classList.add('hit');
+                        status.textContent = 'HIT!';
+                        break;
+                    default:
+                        target.classList.add('inactive');
+                        status.textContent = 'READY';
+                }
+            }
+        }
+
+        function updateTargetCount() {
+            const online = Object.values(gameState.targets).filter(t => t.online).length;
+            document.getElementById('targetCount').textContent = `${online}/${MAX_TARGETS} targets online`;
+        }
+
+        function formatTime(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const min = Math.floor(totalSec / 60);
+            const sec = totalSec % 60;
+            const tenths = Math.floor((ms % 1000) / 100);
+            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}.${tenths}`;
+        }
+
+        function displayHighscores(scores) {
+            const list = document.getElementById('highscores');
+            list.innerHTML = '';
+
+            for (let i = 0; i < 3; i++) {
+                const s = scores[i] || { name: '---', score: 0 };
+                const li = document.createElement('li');
+                li.className = 'highscore-item';
+                li.innerHTML = `
+                    <span class="rank rank-${i + 1}">#${i + 1}</span>
+                    <span class="highscore-name">${s.name}</span>
+                    <span class="highscore-score">${s.score}</span>
+                `;
+                list.appendChild(li);
+            }
+        }
+
+        function log(msg, type = '') {
+            const logContainer = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+
+            const time = new Date().toLocaleTimeString('nl-NL');
+            entry.innerHTML = `<span class="log-time">[${time}]</span><span>${msg}</span>`;
+
+            logContainer.insertBefore(entry, logContainer.firstChild);
+
+            // Limit log entries
+            while (logContainer.children.length > 50) {
+                logContainer.lastChild.remove();
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            log('Log gewist', 'info');
+        }
+
+        // ============================================================
+        // GAME CONTROLS
+        // ============================================================
+
+        function startGame() {
+            const playerName = document.getElementById('playerName').value || 'Speler';
+            const gameTime = parseInt(document.getElementById('gameTime').value) || 60;
+            const targetTime = parseInt(document.getElementById('targetTime').value) || 3;
+
+            // Reset stats
+            gameState.hits = 0;
+            gameState.misses = 0;
+            document.getElementById('hits').textContent = '0';
+            document.getElementById('misses').textContent = '0';
+
+            send({
+                cmd: 'start',
+                player: playerName,
+                gameTime: gameTime,
+                targetTime: targetTime
+            });
+
+            log(`Game gestart - ${gameState.mode} mode`, 'info');
+        }
+
+        function pauseGame() {
+            send({ cmd: 'pause' });
+            log(gameState.paused ? 'Game hervat' : 'Game gepauzeerd', 'info');
+        }
+
+        function stopGame() {
+            send({ cmd: 'stop' });
+            log('Game gestopt', 'info');
+        }
+
+        function resetGame() {
+            send({ cmd: 'reset' });
+            gameState.hits = 0;
+            gameState.misses = 0;
+            document.getElementById('hits').textContent = '0';
+            document.getElementById('misses').textContent = '0';
+            document.getElementById('score').textContent = '0';
+            document.getElementById('timer').textContent = '00:00.0';
+            log('Game gereset', 'info');
+        }
+
+        function setMode(mode) {
+            send({ cmd: 'setMode', mode: mode });
+            gameState.mode = mode;
+
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+
+            const modeNames = {
+                'freeplay': 'Free Play',
+                'sequence': 'Sequence',
+                'random': 'Random',
+                'shootnoshoot': 'Shoot/No Shoot'
+            };
+            log(`Modus: ${modeNames[mode]}`, 'info');
+        }
+
+        function activateTarget(id) {
+            send({ cmd: 'activateTarget', target: id });
+        }
+
+        function activateAll() {
+            send({ cmd: 'activateAll' });
+        }
+
+        function loadHighscores() {
+            send({ cmd: 'getHighscores' });
+        }
+
+        function clearHighscores() {
+            if (confirm('Weet je zeker dat je alle highscores wilt wissen?')) {
+                send({ cmd: 'clearHighscores' });
+                log('Highscores gewist', 'info');
+                setTimeout(loadHighscores, 500);
+            }
+        }
+
+        function closeGameStatus() {
+            document.getElementById('gameStatus').classList.remove('show');
+        }
+
+        function toggleTVMode() {
+            document.body.classList.toggle('tv-mode');
+            const isTv = document.body.classList.contains('tv-mode');
+            log(isTv ? 'TV Mode ingeschakeld' : 'TV Mode uitgeschakeld', 'info');
+        }
+
+        // ============================================================
+        // TAB SWITCHING
+        // ============================================================
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tab === 'fitness') {
+                initFitnessLeds();
+                send({cmd: 'getCounterState'});
+            }
+        }
+
+        // ============================================================
+        // FITNESS COUNTER
+        // ============================================================
+
+        let fitState = {
+            counting: false,
+            count: 0,
+            ledsLit: 0,
+            countsPerLed: 1,
+            countsSinceLed: 0,
+            currentRound: 0,
+            totalRounds: 0,
+            redTimerSeconds: 0,
+            redTimerActive: false,
+            redTimerRemaining: 0,
+            detectionDistance: 20,
+            mode: 'free',
+            timeouts: 0,
+            lastDetectionTime: 0,
+            avgSpeed: 0,
+            detectionTimes: [],
+            lastDistance: 0
+        };
+
+        let fitRedTimerInterval = null;
+
+        // --- Fitness Event Handlers ---
+
+        function handleFitnessUpdate(data) {
+            if (data.count !== undefined) fitState.count = data.count;
+            if (data.ledsLit !== undefined) fitState.ledsLit = data.ledsLit;
+            if (data.countsPerLed !== undefined) {
+                fitState.countsPerLed = data.countsPerLed;
+                document.getElementById('fitCountsPerLed').value = data.countsPerLed;
+            }
+            if (data.countsSinceLed !== undefined) fitState.countsSinceLed = data.countsSinceLed;
+            if (data.round !== undefined) fitState.currentRound = data.round;
+            if (data.totalRounds !== undefined) fitState.totalRounds = data.totalRounds;
+            if (data.counting !== undefined) fitState.counting = data.counting;
+            if (data.distance !== undefined) fitState.lastDistance = data.distance;
+            updateFitnessUI();
+        }
+
+        function handleFitnessDetection(data) {
+            fitState.count = data.count || fitState.count + 1;
+            fitState.ledsLit = data.ledsLit || fitState.ledsLit;
+            fitState.countsSinceLed = data.countsSinceLed || 0;
+
+            const now = Date.now();
+            if (fitState.lastDetectionTime > 0) {
+                const interval = (now - fitState.lastDetectionTime) / 1000;
+                fitState.detectionTimes.push(interval);
+                if (fitState.detectionTimes.length > 20) fitState.detectionTimes.shift();
+                const avg = fitState.detectionTimes.reduce((a,b) => a+b, 0) / fitState.detectionTimes.length;
+                fitState.avgSpeed = avg.toFixed(1);
+            }
+            fitState.lastDetectionTime = now;
+
+            // Stop red timer if active = on time! Show green
+            if (fitState.redTimerActive) {
+                stopFitRedTimer();
+                showFitGreenSuccess();
+                fitnessLog('OP TIJD! LEDs groen!', 'detection');
+            }
+
+            // Restart red timer
+            if (fitState.redTimerSeconds > 0 && fitState.counting) {
+                setTimeout(() => startFitRedTimer(), 800);
+            }
+
+            updateFitnessUI();
+            fitnessLog(`Detectie #${fitState.count} (LEDs: ${fitState.ledsLit}/${FIT_NUM_LEDS})`, 'detection');
+        }
+
+        function handleFitnessFull(data) {
+            fitState.ledsLit = FIT_NUM_LEDS;
+            fitState.count = data.count || fitState.count;
+            celebrateFitLeds();
+            fitnessLog('ALLE LEDS VOL!', 'full');
+
+            if (fitState.totalRounds > 0) {
+                fitState.currentRound++;
+                fitnessLog(`Ronde ${fitState.currentRound}/${fitState.totalRounds} voltooid!`, 'round');
+
+                if (fitState.currentRound >= fitState.totalRounds) {
+                    fitnessLog('ALLE RONDES VOLTOOID!', 'full');
+                    stopFitness();
+                } else {
+                    setTimeout(() => {
+                        send({cmd: 'counterReset'});
+                        fitState.count = 0;
+                        fitState.ledsLit = 0;
+                        fitState.countsSinceLed = 0;
+                        updateFitnessUI();
+                        fitnessLog(`Ronde ${fitState.currentRound + 1} gestart...`, 'round');
+                        if (fitState.redTimerSeconds > 0) startFitRedTimer();
+                    }, 2000);
+                }
+            }
+            updateFitnessUI();
+        }
+
+        function handleFitnessReset() {
+            fitState.count = 0;
+            fitState.ledsLit = 0;
+            fitState.countsSinceLed = 0;
+            fitState.detectionTimes = [];
+            fitState.avgSpeed = 0;
+            fitState.lastDetectionTime = 0;
+            stopFitRedTimer();
+            updateFitnessUI();
+            fitnessLog('Teller gereset', 'info');
+        }
+
+        function handleFitnessTimeout() {
+            fitState.timeouts++;
+            updateFitnessUI();
+            fitnessLog('TIMEOUT! Te laat bij sensor!', 'timeout');
+        }
+
+        // --- Red Timer ---
+
+        function startFitRedTimer() {
+            stopFitRedTimer();
+            if (fitState.redTimerSeconds <= 0) return;
+
+            fitState.redTimerActive = true;
+            fitState.redTimerRemaining = fitState.redTimerSeconds;
+
+            document.getElementById('fitRedTimerDisplay').classList.add('active');
+            send({cmd: 'counterRedTimer', seconds: fitState.redTimerSeconds});
+
+            fitRedTimerInterval = setInterval(() => {
+                fitState.redTimerRemaining -= 0.1;
+                if (fitState.redTimerRemaining <= 0) {
+                    fitState.redTimerRemaining = 0;
+                    fitState.timeouts++;
+                    stopFitRedTimer();
+                    send({cmd: 'counterTimeout'});
+                    fitnessLog('TIMEOUT! Niet op tijd!', 'timeout');
+                    if (fitState.counting && fitState.redTimerSeconds > 0) {
+                        setTimeout(() => startFitRedTimer(), 1000);
+                    }
+                }
+                updateFitRedTimerUI();
+            }, 100);
+            updateFitRedTimerUI();
+        }
+
+        function stopFitRedTimer() {
+            fitState.redTimerActive = false;
+            if (fitRedTimerInterval) {
+                clearInterval(fitRedTimerInterval);
+                fitRedTimerInterval = null;
+            }
+            document.getElementById('fitRedTimerDisplay').classList.remove('active');
+        }
+
+        function updateFitRedTimerUI() {
+            const pct = (fitState.redTimerRemaining / fitState.redTimerSeconds) * 100;
+            document.getElementById('fitRedTimerFill').style.width = pct + '%';
+            document.getElementById('fitRedTimerText').textContent = fitState.redTimerRemaining.toFixed(1);
+        }
+
+        // --- Green Success Flash ---
+
+        function showFitGreenSuccess() {
+            const strip = document.getElementById('fitLedStrip');
+            const leds = strip.querySelectorAll('.led-dot');
+            leds.forEach(led => {
+                led.style.backgroundColor = '#00ff88';
+                led.style.color = '#00ff88';
+                led.classList.add('on');
+                led.style.boxShadow = '0 0 20px #00ff88, 0 0 40px #00ff88';
+            });
+            const countEl = document.getElementById('fitCountValue');
+            countEl.style.background = '#00ff88';
+            countEl.style.webkitBackgroundClip = 'text';
+            setTimeout(() => {
+                updateFitnessLedStrip();
+                countEl.style.background = 'linear-gradient(135deg, var(--primary), var(--secondary))';
+                countEl.style.webkitBackgroundClip = 'text';
+            }, 600);
+        }
+
+        function celebrateFitLeds() {
+            const strip = document.getElementById('fitLedStrip');
+            const leds = strip.querySelectorAll('.led-dot');
+            let hue = 0;
+            const interval = setInterval(() => {
+                leds.forEach((led, i) => {
+                    const h = (hue + i * 60) % 360;
+                    led.style.backgroundColor = `hsl(${h}, 100%, 50%)`;
+                    led.style.color = `hsl(${h}, 100%, 50%)`;
+                    led.classList.add('on');
+                });
+                hue += 10;
+            }, 50);
+            setTimeout(() => {
+                clearInterval(interval);
+                leds.forEach(led => {
+                    led.style.backgroundColor = '#ffd700';
+                    led.style.color = '#ffd700';
+                });
+            }, 5000);
+        }
+
+        // --- Controls ---
+
+        function startFitness() {
+            fitState.counting = true;
+            fitState.currentRound = 0;
+            fitState.timeouts = 0;
+            fitState.totalRounds = parseInt(document.getElementById('fitRounds').value) || 0;
+            fitState.countsPerLed = parseInt(document.getElementById('fitCountsPerLed').value) || 1;
+            fitState.redTimerSeconds = parseInt(document.getElementById('fitRedTimer').value) || 0;
+            fitState.detectionDistance = parseInt(document.getElementById('fitDistance').value) || 20;
+
+            send({
+                cmd: 'counterStart',
+                countsPerLed: fitState.countsPerLed,
+                redTimer: fitState.redTimerSeconds,
+                rounds: fitState.totalRounds,
+                distance: fitState.detectionDistance
+            });
+
+            document.getElementById('fitTotalRounds').textContent = fitState.totalRounds || '--';
+            document.getElementById('fitCurrentRound').textContent = '0';
+            fitnessLog(`Training gestart! ${fitState.totalRounds > 0 ? fitState.totalRounds + ' rondes' : 'Oneindig'}, ${fitState.countsPerLed} per LED`, 'info');
+            if (fitState.redTimerSeconds > 0) setTimeout(() => startFitRedTimer(), 500);
+            updateFitnessUI();
+        }
+
+        function stopFitness() {
+            fitState.counting = false;
+            stopFitRedTimer();
+            send({cmd: 'counterStop'});
+            fitnessLog('Training gestopt', 'info');
+            updateFitnessUI();
+        }
+
+        function resetFitness() {
+            fitState.count = 0;
+            fitState.ledsLit = 0;
+            fitState.countsSinceLed = 0;
+            fitState.currentRound = 0;
+            fitState.timeouts = 0;
+            fitState.detectionTimes = [];
+            fitState.avgSpeed = 0;
+            stopFitRedTimer();
+            send({cmd: 'counterReset'});
+            fitnessLog('Teller gereset', 'info');
+            updateFitnessUI();
+        }
+
+        function setFitnessMode(mode) {
+            fitState.mode = mode;
+            document.querySelectorAll('.fitness-mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.fitmode === mode);
+            });
+            if (mode === 'timed') {
+                document.getElementById('fitRedTimer').value = 5;
+                fitState.redTimerSeconds = 5;
+                document.getElementById('fitRounds').value = 1;
+            } else if (mode === 'interval') {
+                document.getElementById('fitRedTimer').value = 3;
+                fitState.redTimerSeconds = 3;
+                document.getElementById('fitRounds').value = 5;
+            }
+            send({cmd: 'counterSetMode', mode: mode});
+        }
+
+        // --- Settings ---
+
+        function adjustFit(id, delta) {
+            const input = document.getElementById(id);
+            let val = parseInt(input.value) + delta;
+            val = Math.max(parseInt(input.min), Math.min(parseInt(input.max), val));
+            input.value = val;
+            applyFit(id);
+        }
+
+        function applyFit(id) {
+            const val = parseInt(document.getElementById(id).value);
+            switch(id) {
+                case 'fitCountsPerLed':
+                    fitState.countsPerLed = val;
+                    send({cmd: 'counterSetCountsPerLed', value: val});
+                    document.getElementById('fitProgressTotal').textContent = val;
+                    break;
+                case 'fitRedTimer':
+                    fitState.redTimerSeconds = val;
+                    send({cmd: 'counterSetRedTimer', value: val});
+                    break;
+                case 'fitRounds':
+                    fitState.totalRounds = val;
+                    document.getElementById('fitTotalRounds').textContent = val || '--';
+                    send({cmd: 'counterSetRounds', value: val});
+                    break;
+                case 'fitDistance':
+                    fitState.detectionDistance = val;
+                    send({cmd: 'counterSetDistance', value: val});
+                    break;
+            }
+        }
+
+        // --- UI ---
+
+        function updateFitnessUI() {
+            document.getElementById('fitCountValue').textContent = fitState.count;
+            document.getElementById('fitCurrentRound').textContent = fitState.currentRound;
+            document.getElementById('fitTotalRounds').textContent = fitState.totalRounds || '--';
+
+            updateFitnessLedStrip();
+
+            // Progress ring
+            const circumference = 263.89;
+            const offset = circumference - (fitState.countsSinceLed / fitState.countsPerLed) * circumference;
+            document.getElementById('fitProgressCircle').style.strokeDashoffset = offset;
+            document.getElementById('fitProgressCount').textContent = fitState.countsSinceLed;
+            document.getElementById('fitProgressTotal').textContent = fitState.countsPerLed;
+
+            // Stats
+            document.getElementById('fitStatTotal').textContent = fitState.count;
+            document.getElementById('fitStatLeds').textContent = `${fitState.ledsLit}/${FIT_NUM_LEDS}`;
+            document.getElementById('fitStatRounds').textContent = fitState.currentRound;
+            document.getElementById('fitStatSpeed').textContent = fitState.avgSpeed > 0 ? fitState.avgSpeed + 's' : '--';
+            document.getElementById('fitStatTimeouts').textContent = fitState.timeouts;
+            document.getElementById('fitStatDistance').textContent = fitState.lastDistance > 0 ? fitState.lastDistance.toFixed(0) : '--';
+
+            // Buttons
+            document.getElementById('fitBtnStart').disabled = fitState.counting;
+            document.getElementById('fitBtnStop').disabled = !fitState.counting;
+        }
+
+        function initFitnessLeds() {
+            updateFitnessLedStrip();
+        }
+
+        function updateFitnessLedStrip() {
+            const strip = document.getElementById('fitLedStrip');
+            strip.innerHTML = '';
+            for (let i = 0; i < FIT_NUM_LEDS; i++) {
+                const led = document.createElement('div');
+                led.className = 'led-dot' + (i < fitState.ledsLit ? ' on' : '');
+                led.id = 'fit-led-' + i;
+                if (i < fitState.ledsLit) {
+                    const progress = FIT_NUM_LEDS > 1 ? i / (FIT_NUM_LEDS - 1) : 0;
+                    const r = Math.round(progress * 255);
+                    const g = Math.round(255 - (progress * 85));
+                    led.style.backgroundColor = `rgb(${r}, ${g}, 0)`;
+                    led.style.color = `rgb(${r}, ${g}, 0)`;
+                }
+                strip.appendChild(led);
+            }
+        }
+
+        function fitnessLog(msg, type = '') {
+            const logDiv = document.getElementById('fitnessLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            const time = new Date().toLocaleTimeString('nl-NL');
+            entry.innerHTML = `<span class="log-time">[${time}]</span><span>${msg}</span>`;
+            logDiv.insertBefore(entry, logDiv.firstChild);
+            if (logDiv.children.length > 50) logDiv.lastChild.remove();
+        }
+
+        function clearFitnessLog() {
+            document.getElementById('fitnessLog').innerHTML = '';
+        }
+
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTargets();
+            initFitnessLeds();
+            connect();
+            log('Raf RTT Training System gestart', 'info');
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT') return;
+
+                switch (e.key) {
+                    case ' ':
+                        e.preventDefault();
+                        if (!gameState.running) startGame();
+                        else pauseGame();
+                        break;
+                    case 'Escape':
+                        if (gameState.running) stopGame();
+                        break;
+                    case 'r':
+                        resetGame();
+                        break;
+                    case '1': case '2': case '3': case '4':
+                    case '5': case '6': case '7': case '8':
+                        activateTarget(parseInt(e.key));
+                        break;
+                    case 't':
+                        toggleTVMode();
+                        break;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
 )rawliteral";
 
 // ============================================================================
