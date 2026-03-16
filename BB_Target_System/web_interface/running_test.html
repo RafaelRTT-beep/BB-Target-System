@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Hardloop Test Timer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff88;
+            --primary-dark: #00cc6a;
+            --secondary: #00d4ff;
+            --danger: #ff4444;
+            --warning: #ff8800;
+            --success: #00ff88;
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a25;
+            --border: #2a2a3a;
+            --text: #ffffff;
+            --text-muted: #888899;
+            --gold: #ffd700;
+            --silver: #c0c0c0;
+            --bronze: #cd7f32;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.6em;
+            color: var(--secondary);
+            letter-spacing: 2px;
+        }
+
+        .header .subtitle {
+            color: var(--text-muted);
+            font-size: 0.85em;
+            margin-top: 4px;
+        }
+
+        /* Master Timer */
+        .master-timer {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .master-timer .time-display {
+            font-family: 'Orbitron', monospace;
+            font-size: 3.5em;
+            font-weight: 900;
+            color: var(--primary);
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .master-timer.running {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+        }
+
+        .master-timer.running .time-display {
+            animation: pulse-glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { text-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
+            50% { text-shadow: 0 0 40px rgba(0, 255, 136, 0.6); }
+        }
+
+        /* Control Buttons */
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 1em;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-start {
+            background: var(--primary);
+            color: #000;
+        }
+
+        .btn-start:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-stop {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-reset {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .btn-reset:hover {
+            background: #3a3a4a;
+        }
+
+        .btn-export {
+            background: var(--secondary);
+            color: #000;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Runner Grid */
+        .runners-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .runner-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .runner-card.finished {
+            border-color: var(--primary);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .runner-card.dnf {
+            border-color: var(--danger);
+            background: rgba(255, 68, 68, 0.05);
+            opacity: 0.6;
+        }
+
+        .runner-number {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.4em;
+            font-weight: 900;
+            color: var(--secondary);
+            min-width: 36px;
+            text-align: center;
+        }
+
+        .runner-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .runner-name-input {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95em;
+            padding: 6px 10px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .runner-name-input:focus {
+            border-color: var(--secondary);
+        }
+
+        .runner-name-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .runner-time {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--text-muted);
+            min-width: 100px;
+            text-align: right;
+        }
+
+        .runner-card.finished .runner-time {
+            color: var(--primary);
+        }
+
+        .runner-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-finish {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 700;
+            font-size: 0.85em;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-finish:active {
+            transform: scale(0.93);
+        }
+
+        .btn-finish:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .btn-dnf {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-weight: 600;
+            font-size: 0.75em;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .btn-dnf:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Results Panel */
+        .results-panel {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .results-panel.visible {
+            display: block;
+        }
+
+        .results-panel h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2em;
+            color: var(--secondary);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .results-table th {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .results-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(42, 42, 58, 0.5);
+            font-size: 0.95em;
+        }
+
+        .results-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rank-1 td:first-child { color: var(--gold); font-weight: 700; }
+        .rank-2 td:first-child { color: var(--silver); font-weight: 700; }
+        .rank-3 td:first-child { color: var(--bronze); font-weight: 700; }
+
+        .rank-medal {
+            font-weight: 900;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .result-time {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .result-dnf {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        /* Back Link */
+        .back-link {
+            display: inline-block;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .master-timer .time-display {
+                font-size: 2.5em;
+            }
+
+            .runners-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .runner-card {
+                padding: 10px 12px;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+        }
+
+        /* TV Mode */
+        body.tv-mode {
+            font-size: 1.4em;
+        }
+
+        body.tv-mode .master-timer .time-display {
+            font-size: 5em;
+        }
+
+        body.tv-mode .runner-time {
+            font-size: 1.5em;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: #fff;
+                color: #000;
+            }
+            .controls, .btn-finish, .btn-dnf, .runner-name-input, .back-link {
+                display: none !important;
+            }
+            .results-panel {
+                display: block !important;
+                border-color: #ccc;
+            }
+            .results-table th, .results-table td {
+                border-color: #ccc;
+            }
+            .result-time { color: #000; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>HARDLOOP TEST</h1>
+            <div class="subtitle">Timer voor 15 deelnemers</div>
+        </div>
+
+        <!-- Master Timer -->
+        <div class="master-timer" id="masterTimer">
+            <div class="time-display" id="masterTime">00:00.00</div>
+            <div class="controls">
+                <button class="btn btn-start" id="btnStart" onclick="startTimer()">START</button>
+                <button class="btn btn-stop" id="btnStop" onclick="stopAll()" disabled>STOP ALLE</button>
+                <button class="btn btn-reset" id="btnReset" onclick="resetAll()">RESET</button>
+                <button class="btn btn-export" id="btnExport" onclick="exportResults()" disabled>EXPORT</button>
+            </div>
+        </div>
+
+        <!-- Runner Cards -->
+        <div class="runners-grid" id="runnersGrid"></div>
+
+        <!-- Results Panel -->
+        <div class="results-panel" id="resultsPanel">
+            <h2>RESULTATEN</h2>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Naam</th>
+                        <th>Tijd</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // Hardloop Test Timer - 15 Deelnemers
+        // ============================================================
+
+        const RUNNER_COUNT = 15;
+        let runners = [];
+        let timerRunning = false;
+        let startTime = 0;
+        let elapsedMs = 0;
+        let animationFrame = null;
+
+        // Initialize runners
+        function initRunners() {
+            const grid = document.getElementById('runnersGrid');
+            grid.innerHTML = '';
+            runners = [];
+
+            for (let i = 0; i < RUNNER_COUNT; i++) {
+                const runner = {
+                    id: i,
+                    name: '',
+                    finishTime: null,
+                    dnf: false
+                };
+                runners.push(runner);
+
+                const card = document.createElement('div');
+                card.className = 'runner-card';
+                card.id = `runner-${i}`;
+                card.innerHTML = `
+                    <div class="runner-number">${i + 1}</div>
+                    <div class="runner-info">
+                        <input type="text" class="runner-name-input"
+                               id="name-${i}"
+                               placeholder="Deelnemer ${i + 1}"
+                               oninput="updateName(${i}, this.value)"
+                               autocomplete="off">
+                    </div>
+                    <div class="runner-time" id="time-${i}">--:--.--</div>
+                    <div class="runner-actions">
+                        <button class="btn-finish" id="btn-finish-${i}"
+                                onclick="finishRunner(${i})" disabled>FINISH</button>
+                        <button class="btn-dnf" id="btn-dnf-${i}"
+                                onclick="dnfRunner(${i})" disabled>DNF</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+
+            // Restore saved names from localStorage
+            const savedNames = localStorage.getItem('runningTestNames');
+            if (savedNames) {
+                try {
+                    const names = JSON.parse(savedNames);
+                    names.forEach((name, i) => {
+                        if (i < RUNNER_COUNT && name) {
+                            runners[i].name = name;
+                            document.getElementById(`name-${i}`).value = name;
+                        }
+                    });
+                } catch (e) {}
+            }
+        }
+
+        function updateName(id, name) {
+            runners[id].name = name;
+            // Save names to localStorage
+            const names = runners.map(r => r.name);
+            localStorage.setItem('runningTestNames', JSON.stringify(names));
+        }
+
+        function getRunnerDisplayName(runner) {
+            return runner.name || `Deelnemer ${runner.id + 1}`;
+        }
+
+        // Format time as MM:SS.cc (centiseconds)
+        function formatTime(ms) {
+            if (ms === null || ms === undefined) return '--:--.--';
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const centiseconds = Math.floor((ms % 1000) / 10);
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`;
+        }
+
+        // Start the master timer
+        function startTimer() {
+            if (timerRunning) return;
+
+            timerRunning = true;
+            startTime = performance.now() - elapsedMs;
+
+            document.getElementById('masterTimer').classList.add('running');
+            document.getElementById('btnStart').disabled = true;
+            document.getElementById('btnStop').disabled = false;
+            document.getElementById('btnReset').disabled = true;
+            document.getElementById('btnExport').disabled = true;
+
+            // Enable finish buttons for non-finished runners
+            for (let i = 0; i < RUNNER_COUNT; i++) {
+                if (!runners[i].finishTime && !runners[i].dnf) {
+                    document.getElementById(`btn-finish-${i}`).disabled = false;
+                    document.getElementById(`btn-dnf-${i}`).disabled = false;
+                }
+            }
+
+            // Disable name inputs while running
+            for (let i = 0; i < RUNNER_COUNT; i++) {
+                document.getElementById(`name-${i}`).readOnly = true;
+            }
+
+            tick();
+        }
+
+        function tick() {
+            if (!timerRunning) return;
+
+            const now = performance.now();
+            elapsedMs = now - startTime;
+
+            document.getElementById('masterTime').textContent = formatTime(elapsedMs);
+
+            // Update times for unfinished runners
+            for (let i = 0; i < RUNNER_COUNT; i++) {
+                if (!runners[i].finishTime && !runners[i].dnf) {
+                    document.getElementById(`time-${i}`).textContent = formatTime(elapsedMs);
+                }
+            }
+
+            animationFrame = requestAnimationFrame(tick);
+        }
+
+        // Finish a runner (record their time)
+        function finishRunner(id) {
+            if (!timerRunning || runners[id].finishTime || runners[id].dnf) return;
+
+            runners[id].finishTime = elapsedMs;
+
+            const card = document.getElementById(`runner-${id}`);
+            card.classList.add('finished');
+
+            document.getElementById(`time-${id}`).textContent = formatTime(runners[id].finishTime);
+            document.getElementById(`btn-finish-${id}`).disabled = true;
+            document.getElementById(`btn-dnf-${id}`).disabled = true;
+
+            checkAllFinished();
+        }
+
+        // Mark runner as DNF (Did Not Finish)
+        function dnfRunner(id) {
+            if (!timerRunning || runners[id].finishTime || runners[id].dnf) return;
+
+            runners[id].dnf = true;
+
+            const card = document.getElementById(`runner-${id}`);
+            card.classList.add('dnf');
+
+            document.getElementById(`time-${id}`).textContent = 'DNF';
+            document.getElementById(`btn-finish-${id}`).disabled = true;
+            document.getElementById(`btn-dnf-${id}`).disabled = true;
+
+            checkAllFinished();
+        }
+
+        // Check if all runners have finished or DNF'd
+        function checkAllFinished() {
+            const allDone = runners.every(r => r.finishTime !== null || r.dnf);
+            if (allDone) {
+                stopAll();
+            }
+        }
+
+        // Stop the timer for everyone
+        function stopAll() {
+            if (!timerRunning) return;
+
+            timerRunning = false;
+            cancelAnimationFrame(animationFrame);
+
+            // Record time for any unfinished runners
+            for (let i = 0; i < RUNNER_COUNT; i++) {
+                if (!runners[i].finishTime && !runners[i].dnf) {
+                    runners[i].finishTime = elapsedMs;
+                    document.getElementById(`time-${i}`).textContent = formatTime(elapsedMs);
+                    document.getElementById(`runner-${i}`).classList.add('finished');
+                }
+                document.getElementById(`btn-finish-${i}`).disabled = true;
+                document.getElementById(`btn-dnf-${i}`).disabled = true;
+            }
+
+            document.getElementById('masterTimer').classList.remove('running');
+            document.getElementById('btnStart').disabled = true;
+            document.getElementById('btnStop').disabled = true;
+            document.getElementById('btnReset').disabled = false;
+            document.getElementById('btnExport').disabled = false;
+
+            showResults();
+        }
+
+        // Reset everything
+        function resetAll() {
+            timerRunning = false;
+            elapsedMs = 0;
+            cancelAnimationFrame(animationFrame);
+
+            document.getElementById('masterTime').textContent = '00:00.00';
+            document.getElementById('masterTimer').classList.remove('running');
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnStop').disabled = true;
+            document.getElementById('btnReset').disabled = false;
+            document.getElementById('btnExport').disabled = true;
+            document.getElementById('resultsPanel').classList.remove('visible');
+
+            for (let i = 0; i < RUNNER_COUNT; i++) {
+                runners[i].finishTime = null;
+                runners[i].dnf = false;
+
+                const card = document.getElementById(`runner-${i}`);
+                card.classList.remove('finished', 'dnf');
+
+                document.getElementById(`time-${i}`).textContent = '--:--.--';
+                document.getElementById(`btn-finish-${i}`).disabled = true;
+                document.getElementById(`btn-dnf-${i}`).disabled = true;
+                document.getElementById(`name-${i}`).readOnly = false;
+            }
+        }
+
+        // Show results sorted by time
+        function showResults() {
+            const panel = document.getElementById('resultsPanel');
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+
+            // Sort: finished runners by time, then DNF at bottom
+            const sorted = [...runners]
+                .filter(r => r.finishTime !== null || r.dnf)
+                .sort((a, b) => {
+                    if (a.dnf && !b.dnf) return 1;
+                    if (!a.dnf && b.dnf) return -1;
+                    if (a.dnf && b.dnf) return 0;
+                    return a.finishTime - b.finishTime;
+                });
+
+            let rank = 0;
+            sorted.forEach((runner, index) => {
+                const tr = document.createElement('tr');
+
+                if (runner.dnf) {
+                    tr.innerHTML = `
+                        <td class="rank-medal">-</td>
+                        <td>${getRunnerDisplayName(runner)}</td>
+                        <td class="result-dnf">DNF</td>
+                    `;
+                } else {
+                    rank++;
+                    const rankClass = rank <= 3 ? `rank-${rank}` : '';
+                    tr.className = rankClass;
+                    tr.innerHTML = `
+                        <td class="rank-medal">${rank}</td>
+                        <td>${getRunnerDisplayName(runner)}</td>
+                        <td class="result-time">${formatTime(runner.finishTime)}</td>
+                    `;
+                }
+
+                tbody.appendChild(tr);
+            });
+
+            panel.classList.add('visible');
+        }
+
+        // Export results as CSV
+        function exportResults() {
+            const sorted = [...runners]
+                .filter(r => r.finishTime !== null || r.dnf)
+                .sort((a, b) => {
+                    if (a.dnf && !b.dnf) return 1;
+                    if (!a.dnf && b.dnf) return -1;
+                    if (a.dnf && b.dnf) return 0;
+                    return a.finishTime - b.finishTime;
+                });
+
+            let csv = 'Positie,Naam,Tijd\n';
+            let rank = 0;
+            sorted.forEach(runner => {
+                if (runner.dnf) {
+                    csv += `-,${getRunnerDisplayName(runner)},DNF\n`;
+                } else {
+                    rank++;
+                    csv += `${rank},${getRunnerDisplayName(runner)},${formatTime(runner.finishTime)}\n`;
+                }
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const date = new Date().toISOString().split('T')[0];
+            a.download = `hardloop_test_${date}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+
+            switch (e.key) {
+                case ' ':
+                    e.preventDefault();
+                    if (!timerRunning) startTimer();
+                    break;
+                case 'Escape':
+                    if (timerRunning) stopAll();
+                    break;
+                case 'r':
+                case 'R':
+                    if (!timerRunning) resetAll();
+                    break;
+                case 't':
+                case 'T':
+                    document.body.classList.toggle('tv-mode');
+                    break;
+            }
+
+            // Number keys 1-9 to finish runner 1-9, 0 for runner 10
+            if (timerRunning) {
+                const num = parseInt(e.key);
+                if (!isNaN(num)) {
+                    const idx = num === 0 ? 9 : num - 1;
+                    if (idx < RUNNER_COUNT) finishRunner(idx);
+                }
+            }
+        });
+
+        // Initialize on load
+        initRunners();
+    </script>
+</body>
+</html>
