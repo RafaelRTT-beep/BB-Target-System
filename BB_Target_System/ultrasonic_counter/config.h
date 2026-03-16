@@ -10,8 +10,9 @@
 // ============================================================================
 // NODE IDENTIFICATIE
 // ============================================================================
-// BELANGRIJK: Gebruik een ID buiten het bereik van target nodes (bijv. 9+)
-#define NODE_ID             9
+// BELANGRIJK: Counter nodes gebruiken ID 101+ (targets gebruiken 1-99)
+// Stel NODE_ID in op 101 voor counter 1, 102 voor counter 2
+#define NODE_ID             101
 
 // ============================================================================
 // PIN CONFIGURATIE

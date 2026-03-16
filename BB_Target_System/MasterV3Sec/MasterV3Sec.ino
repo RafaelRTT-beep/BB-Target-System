@@ -89,6 +89,35 @@ TargetInfo targets[MAX_TARGETS];
 int numTargets = TARGET_COUNT;
 
 // ============================================================
+// COUNTER NODES (ultrasone sensor nodes, ID >= 100)
+// ============================================================
+
+#define MAX_COUNTERS 4
+#define COUNTER_ID_MIN 100
+
+struct CounterNode {
+  uint8_t  mac[6];
+  uint8_t  id;
+  bool     online;
+  uint32_t lastPong;
+  uint16_t count;      // totalCount van de node
+  uint8_t  ledsLit;    // hoeveel LEDs branden
+  uint8_t  numLeds;    // totaal LEDs op de node
+  uint8_t  countsPerLed;
+  uint8_t  state;      // 0=idle, 1=counting, 2=full, 3=paused
+};
+
+CounterNode counters[MAX_COUNTERS];
+int numCounters = 0;
+
+int findCounterByID(uint8_t id) {
+  for (int i = 0; i < numCounters; i++) {
+    if (counters[i].id == id) return i;
+  }
+  return -1;
+}
+
+// ============================================================
 // HIT QUEUE (ISR-safe)
 // ============================================================
 
@@ -874,6 +903,34 @@ void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
   if (len != sizeof(TargetMessage)) return;
   TargetMessage msg;
   memcpy(&msg, data, sizeof(msg));
+
+  // Counter nodes (ID >= 100) worden apart afgehandeld
+  if (msg.targetId >= COUNTER_ID_MIN) {
+    int ci = findCounterByID(msg.targetId);
+    if (ci < 0 && numCounters < MAX_COUNTERS) {
+      ci = numCounters++;
+      counters[ci].id = msg.targetId;
+      memcpy(counters[ci].mac, info->src_addr, 6);
+      // Register as ESP-NOW peer
+      esp_now_peer_info_t peer = {};
+      memcpy(peer.peer_addr, info->src_addr, 6);
+      peer.channel = 0;
+      peer.encrypt = false;
+      esp_now_add_peer(&peer);
+      Serial.printf("COUNTER NODE %d ontdekt!\n", msg.targetId);
+    }
+    if (ci >= 0) {
+      counters[ci].online   = true;
+      counters[ci].lastPong = millis();
+      counters[ci].count    = msg.intensity;
+      counters[ci].ledsLit  = msg.colorR;
+      counters[ci].numLeds  = msg.colorG;
+      counters[ci].countsPerLed = msg.colorB;
+      counters[ci].state    = msg.extra;
+    }
+    return;
+  }
+
   int idx = findTargetByID(msg.targetId);
   if (idx < 0 && msg.targetId > 0 && numTargets < MAX_TARGETS) {
     queueDiscovery(info->src_addr, msg.targetId, true);
@@ -3162,6 +3219,7 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg)
   <button class="cat-tab" onclick="filterCat('solo')">Solo</button>
   <button class="cat-tab" onclick="filterCat('multi')">Multiplayer</button>
   <button class="cat-tab" onclick="filterCat('team')">Team</button>
+  <button class="cat-tab" onclick="filterCat('fitness')">Fitness</button>
 </div>
 <div class="mgrid" id="modeGrid"></div>
 </div>
@@ -3391,7 +3449,8 @@ var MODES=[
   {id:8,name:'Parcours',icon:'\u{1F3C3}',desc:'Volg de route, op tijd',cat:'solo'},
   {id:9,name:'Fast Track',icon:'\u{1F3C1}',desc:'Wie schiet het snelst alle targets?',cat:'multi'},
   {id:10,name:'Tournament',icon:'\u2694\uFE0F',desc:'Team vs team competitie',cat:'team'},
-  {id:11,name:'Capture Points',icon:'\u{1F3F0}',desc:'Verover vijandige targets',cat:'team'}
+  {id:11,name:'Capture Points',icon:'\u{1F3F0}',desc:'Verover vijandige targets',cat:'team'},
+  {id:12,name:'Fitness Counter',icon:'\u{1F4AA}',desc:'Teller met ultrasone sensor',cat:'fitness'}
 ];
 var curMode=0,curCat='all';
 
@@ -3408,7 +3467,7 @@ function buildModeGrid(){
 function filterCat(c){
   curCat=c;
   var tabs=E('catTabs').children;
-  var cats=['all','solo','multi','team'];
+  var cats=['all','solo','multi','team','fitness'];
   for(var i=0;i<tabs.length;i++)tabs[i].className='cat-tab'+(cats[i]===c?' active':'');
   buildModeGrid();
 }
@@ -3515,7 +3574,19 @@ function buildSettingsHTML(m){
     h+='<div id="tbPerTeamModes" style="display:none"></div>';
     h+='<div style="font-weight:700;font-size:.85em;margin:8px 0 4px">Targets toewijzen:</div><div id="tbAssign"></div><div id="tbLegend" style="display:flex;gap:10px;margin:8px 0;font-size:.75em;color:#666;flex-wrap:wrap"></div>';
     h+='<div id="tbGlobalRounds"><div class="field"><label>Rondes per zone: <span id="tbRoundsVal" style="color:var(--r);font-weight:700">10</span></label><div class="slider-f"><input type="range" id="tbRounds" min="3" max="30" value="10" oninput="E(\'tbRoundsVal\').textContent=this.value"></div></div></div>';
-  }else if(m===11){
+  }else if(m===12){
+    h+='<div style="text-align:center;padding:16px 0;font-size:1.2em;font-weight:800;color:var(--r)">Fitness Counter</div>';
+    h+='<div id="fitCounterInfo" style="text-align:center;font-size:.9em;color:#666;margin-bottom:12px">Zoeken naar counter nodes...</div>';
+    h+='<div class="field"><label>Counts per LED:</label>';
+    h+='<div class="slider-f"><input type="range" id="fitCpl" min="1" max="20" value="1" oninput="E(\'fitCplVal\').textContent=this.value"></div>';
+    h+='<div class="slider-val"><span id="fitCplVal">1</span> detecties per LED</div></div>';
+    h+='<div style="padding:12px;background:#f9f9f9;border-radius:10px;font-size:.85em;line-height:1.5">';
+    h+='<b>Hoe werkt het:</b><br>';
+    h+='Beweeg je hand over de ultrasone sensor.<br>';
+    h+='Bij elke detectie piept de buzzer en gaat er een LED bij branden.<br>';
+    h+='Als alle 6 LEDs vol zijn: gouden animatie!';
+    h+='</div>';
+  }else if(m===11){
     h+='<div class="field"><label style="font-weight:700">Aantal teams:</label></div>';
     h+='<div class="tog-row"><button class="tog-btn on" id="cpN2" onclick="cpSetNum(2)">2</button><button class="tog-btn" id="cpN3" onclick="cpSetNum(3)">3</button><button class="tog-btn" id="cpN4" onclick="cpSetNum(4)">4</button></div>';
     h+='<div id="cpNames"></div>';
@@ -3764,7 +3835,13 @@ function doStart(){
     var gArr=[];if(lastTargets){for(var i=0;i<lastTargets.length;i++){var g=cpGroups[lastTargets[i].id];gArr.push(g!=undefined?g:-1)}}
     q+='&tbg='+gArr.join(',');
   }
-  // Toerbeurt parameters
+  else if(m==12){
+    // Fitness Counter: reset counters en stel counts per LED in
+    var cpl=gv('fitCpl')||1;
+    fetch('/counter?cmd=cpl&val='+cpl);
+    fetch('/counter?cmd=reset');
+  }
+  // Toerbeurt parameters
   if(gc('trnOn')&&trnPlayerList.length>=2){
     q+='&trn=1&trnc='+trnPlayerList.length;
     for(var ti=0;ti<trnPlayerList.length;ti++)q+='&trnp'+(ti+1)+'='+encodeURIComponent(trnPlayerList[ti]);
@@ -3831,6 +3908,7 @@ function update(d){
   updateManual(sorted);
   updateLeaderboard(d);
   updateOTA(d);
+  updateCounters(d);
 }
 
 function updateGame(d,sorted,zClrs){
@@ -3979,6 +4057,37 @@ function updateManual(sorted){
     else{row.innerHTML='<span>T'+t.id+'</span><button class="cbtn cbtn-r" onclick="cmd(\'activate?t='+t.id+'&c=r\')">R</button><button class="cbtn cbtn-g" onclick="cmd(\'activate?t='+t.id+'&c=g\')">G</button><button class="cbtn cbtn-b" onclick="cmd(\'activate?t='+t.id+'&c=b\')">B</button><button class="cbtn cbtn-off" onclick="cmd(\'activate?t='+t.id+'&c=off\')">Uit</button>'}
     mb.appendChild(row);
   });
+}
+function updateCounters(d){
+  var cc=E('counterCards');if(!cc)return;
+  if(!d.counters||d.counters.length===0){E('counterDisplay').textContent='Geen counter nodes gevonden';cc.innerHTML='';return}
+  E('counterDisplay').textContent=d.counters.length+' counter node'+(d.counters.length>1?'s':'')+' verbonden';
+  var h='';
+  d.counters.forEach(function(c){
+    var pct=c.numLeds>0?(c.ledsLit/c.numLeds*100):0;
+    var stLbl=['Idle','Tellen','Vol!','Pauze'][c.state]||'?';
+    var stClr=c.online?(['#999','#4CAF50','#FFD700','#FF9800'][c.state]||'#999'):'#ccc';
+    h+='<div style="border:2px solid '+(c.online?'#ddd':'#eee')+';border-radius:10px;padding:10px;margin:6px 0;background:'+(c.online?'#fff':'#f5f5f5')+'">';
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h+='<span style="font-weight:800;font-size:1.1em">C'+c.id+'</span>';
+    h+='<span style="background:'+stClr+';color:#fff;padding:2px 8px;border-radius:10px;font-size:.75em;font-weight:700">'+stLbl+'</span>';
+    h+='<span style="margin-left:auto;font-size:1.4em;font-weight:900;color:var(--r)">'+c.count+'</span>';
+    h+='</div>';
+    h+='<div style="height:8px;background:#eee;border-radius:4px;overflow:hidden">';
+    h+='<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#4CAF50,#FFD700);border-radius:4px;transition:width .3s"></div>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:4px;margin-top:4px">';
+    for(var i=0;i<c.numLeds;i++){
+      var lit=i<c.ledsLit;
+      h+='<div style="flex:1;height:12px;border-radius:3px;background:'+(lit?'#4CAF50':'#e0e0e0')+';transition:background .3s"></div>';
+    }
+    h+='</div>';
+    h+='<div style="display:flex;gap:6px;margin-top:6px">';
+    h+='<button onclick="fetch(\'/counter?cmd=reset&id='+c.id+'\')" style="flex:1;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:.75em;font-weight:600;cursor:pointer;background:#fff">Reset</button>';
+    h+='</div>';
+    h+='</div>';
+  });
+  cc.innerHTML=h;
 }
 function updateOTA(d){
   var ob=E('otaBtns');if(!ob||!d.targets)return;
@@ -4313,6 +4422,21 @@ void handleStatus() {
     json += "]";
   }
 
+  // Counter nodes data
+  json += ",\"counters\":[";
+  for (int i = 0; i < numCounters; i++) {
+    if (i > 0) json += ",";
+    json += "{\"id\":" + String(counters[i].id);
+    json += ",\"online\":" + String(counters[i].online ? "true" : "false");
+    json += ",\"count\":" + String(counters[i].count);
+    json += ",\"ledsLit\":" + String(counters[i].ledsLit);
+    json += ",\"numLeds\":" + String(counters[i].numLeds);
+    json += ",\"cpl\":" + String(counters[i].countsPerLed);
+    json += ",\"state\":" + String(counters[i].state);
+    json += "}";
+  }
+  json += "]";
+
   json += "}";
 
   // Restore previous zone's globals so pending actions aren't polluted
@@ -4321,6 +4445,59 @@ void handleStatus() {
   }
 
   server.send(200, "application/json", json);
+}
+
+// ============================================================
+// COUNTER NODE CONTROL
+// ============================================================
+
+void sendToCounter(int ci, uint8_t msgType, uint8_t r, uint8_t g, uint8_t b, uint8_t extra, uint16_t intensity) {
+  if (ci < 0 || ci >= numCounters) return;
+  TargetMessage msg = {};
+  msg.msgType   = msgType;
+  msg.targetId  = counters[ci].id;
+  msg.timestamp = millis();
+  msg.intensity = intensity;
+  msg.colorR    = r;
+  msg.colorG    = g;
+  msg.colorB    = b;
+  msg.extra     = extra;
+  esp_now_send(counters[ci].mac, (uint8_t*)&msg, sizeof(msg));
+}
+
+void handleCounter() {
+  // /counter?cmd=reset        - reset all counters
+  // /counter?cmd=reset&id=101 - reset specific counter
+  // /counter?cmd=cpl&val=5    - set counts per LED
+  // /counter?cmd=start        - activate counting
+  // /counter?cmd=stop         - pause counting
+  String cmd = server.hasArg("cmd") ? server.arg("cmd") : "";
+  int id = server.hasArg("id") ? server.arg("id").toInt() : 0;
+  int val = server.hasArg("val") ? server.arg("val").toInt() : 1;
+
+  if (cmd == "reset") {
+    if (id > 0) {
+      int ci = findCounterByID(id);
+      if (ci >= 0) { sendToCounter(ci, MSG_LIGHT_ON, 0, 255, 0, 0, 0); counters[ci].count = 0; counters[ci].ledsLit = 0; }
+    } else {
+      for (int i = 0; i < numCounters; i++) { sendToCounter(i, MSG_LIGHT_ON, 0, 255, 0, 0, 0); counters[i].count = 0; counters[i].ledsLit = 0; }
+    }
+  } else if (cmd == "cpl") {
+    // Set counts per LED via SET_THRESHOLD message
+    for (int i = 0; i < numCounters; i++) {
+      if (id == 0 || counters[i].id == id) sendToCounter(i, MSG_SET_THRESHOLD, 0, 0, 0, 0, val);
+    }
+  } else if (cmd == "stop") {
+    for (int i = 0; i < numCounters; i++) {
+      if (id == 0 || counters[i].id == id) sendToCounter(i, MSG_LIGHT_OFF, 0, 0, 0, 0, 0);
+    }
+  } else if (cmd == "buzz") {
+    for (int i = 0; i < numCounters; i++) {
+      if (id == 0 || counters[i].id == id) sendToCounter(i, MSG_BUZZ, 0, 0, 0, 0, 0);
+    }
+  }
+
+  server.send(200, "text/plain", "OK");
 }
 
 void handleStart() {
@@ -5698,6 +5875,13 @@ void loop() {
         Serial.printf("TARGET OFFLINE: T%d\n", targets[i].id);
       }
     }
+    // Mark counter nodes offline
+    for (int i = 0; i < numCounters; i++) {
+      if (counters[i].online && millis() - counters[i].lastPong > 12000) {
+        counters[i].online = false;
+        Serial.printf("COUNTER OFFLINE: C%d\n", counters[i].id);
+      }
+    }
     
     // Mid-game: reageer op offline targets per zone
     if (changed) {
