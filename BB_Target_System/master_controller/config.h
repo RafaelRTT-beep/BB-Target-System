@@ -9,7 +9,7 @@
 // NETWERK INSTELLINGEN
 // ============================================================================
 #define WIFI_SSID           "Raf_RTT_Training"
-#define WIFI_PASSWORD       "shoot2score"  // Minimaal 8 karakters
+#define WIFI_PASSWORD       "12345678"  // Minimaal 8 karakters
 #define WIFI_CHANNEL        1
 
 // Webserver
