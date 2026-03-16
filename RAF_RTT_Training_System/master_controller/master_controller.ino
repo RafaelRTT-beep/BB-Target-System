@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BB TARGET SYSTEM - MASTER CONTROLLER FIRMWARE
+ * RAF RTT TRAINING SYSTEM - MASTER CONTROLLER FIRMWARE
  * ============================================================================
  *
  * Versie: 1.0.0
@@ -40,7 +40,7 @@
 
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BB Target System</title>
+<title>RAF RTT Training System</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#fff;min-height:100vh}
@@ -101,7 +101,7 @@ h1{font-size:2rem;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-back
 <body>
 <div class="container">
 <header>
-<h1>BB Target System</h1>
+<h1>RAF RTT Training System</h1>
 <div><span class="status-dot" id="wsStatus"></span><span id="wsStatusText">Verbinden...</span></div>
 </header>
 
@@ -585,7 +585,7 @@ void setup() {
     delay(500);
 
     Serial.println("\n============================================");
-    Serial.println("   BB TARGET SYSTEM - MASTER CONTROLLER");
+    Serial.println("   RAF RTT TRAINING SYSTEM - MASTER CONTROLLER");
     Serial.println("============================================\n");
 
     // Initialize targets array

@@ -1,10 +1,10 @@
-# BB Target System
+# RAF RTT Training System
 
 Een professioneel, draadloos schietdoelsysteem voor BB/Airsoft training met real-time feedback.
 
 ```
     ┌─────────────────────────────────────────────────────────────┐
-    │                    BB TARGET SYSTEM                         │
+    │                 RAF RTT TRAINING SYSTEM                      │
     │                                                             │
     │    🎯 8 Draadloze Targets    ⚡ <10ms Responstijd           │
     │    📱 Webinterface           🏆 Highscores                  │
@@ -69,14 +69,14 @@ Voor elk target (1-8):
 
 ### 4. Verbinden
 
-1. Verbind met WiFi: `BB_Target_System`
+1. Verbind met WiFi: `RAF RTT Training`
 2. Wachtwoord: `shoot2score`
 3. Open browser: `http://192.168.4.1`
 
 ## Mapstructuur
 
 ```
-BB_Target_System/
+RAF_RTT_Training_System/
 ├── master_controller/
 │   ├── master_controller.ino   # Master firmware
 │   └── config.h                # Master configuratie
@@ -154,7 +154,7 @@ In `target_node/config.h`:
 In `master_controller/config.h`:
 
 ```cpp
-#define WIFI_SSID       "BB_Target_System"
+#define WIFI_SSID       "RAF RTT Training"
 #define WIFI_PASSWORD   "shoot2score"
 ```
 

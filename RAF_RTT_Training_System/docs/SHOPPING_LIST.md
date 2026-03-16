@@ -1,4 +1,4 @@
-# BB Target System - Componenten Bestellijst
+# RAF RTT Training System - Componenten Bestellijst
 
 ## Voor 8 Targets + 1 Master Controller
 

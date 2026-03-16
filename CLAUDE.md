@@ -1,8 +1,8 @@
-# CLAUDE.md - BB Target System
+# CLAUDE.md - RAF RTT Training System
 
 ## Project Overview
 
-BB Target System is a wireless shooting target system for BB/Airsoft training with real-time feedback. It consists of embedded ESP32 firmware (Arduino C++) and a web interface (HTML/CSS/JS). The project documentation is written in **Dutch**.
+RAF RTT Training System is a wireless shooting target system for BB/Airsoft training with real-time feedback. It consists of embedded ESP32 firmware (Arduino C++) and a web interface (HTML/CSS/JS). The project documentation is written in **Dutch**.
 
 **Version:** 1.0.0
 **License:** Free for personal use
@@ -10,7 +10,7 @@ BB Target System is a wireless shooting target system for BB/Airsoft training wi
 ## Repository Structure
 
 ```
-BB_Target_System/
+RAF_RTT_Training_System/
 ├── master_controller/
 │   ├── master_controller.ino   # ESP32-S3 master firmware (~1,425 lines)
 │   └── config.h                # Master configuration (network, game, scoring)
@@ -46,7 +46,7 @@ BB_Target_System/
                 (port 81/ws)     (WiFi AP)        (<5ms)       (piezo + LED + buzzer)
 ```
 
-- **Master Controller** runs a WiFi Access Point (`BB_Target_System` / `shoot2score`), serves the web interface on port 80, and manages game state
+- **Master Controller** runs a WiFi Access Point (`RAF RTT Training` / `shoot2score`), serves the web interface on port 80, and manages game state
 - **Target Nodes** communicate with the master via ESP-NOW using compact binary structs (8 bytes each direction)
 - **Web clients** connect via WebSocket and exchange JSON messages for game control and real-time updates
 
@@ -110,7 +110,7 @@ There are **no automated tests**. Verification is done manually:
 ### Master (`master_controller/config.h`)
 | Define | Default | Purpose |
 |--------|---------|---------|
-| `WIFI_SSID` | `"BB_Target_System"` | Access point name |
+| `WIFI_SSID` | `"RAF RTT Training"` | Access point name |
 | `WIFI_PASSWORD` | `"shoot2score"` | AP password (min 8 chars) |
 | `MAX_TARGETS` | `8` | Maximum number of targets |
 | `DEFAULT_GAME_TIME` | `60` | Game duration in seconds |
