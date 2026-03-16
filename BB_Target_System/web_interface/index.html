@@ -736,6 +736,381 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary);
         }
+
+        /* ============================================================
+           TAB NAVIGATION
+           ============================================================ */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 5px;
+            border: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px 20px;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ============================================================
+           FITNESS COUNTER STYLES
+           ============================================================ */
+        .fitness-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .fitness-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .counter-display {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .count-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+
+        .count-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .round-display {
+            text-align: center;
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .round-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .round-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .led-strip-visual {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 30px;
+        }
+
+        .led-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #1a1a2e;
+            border: 2px solid #2a2a3a;
+            transition: all 0.3s ease;
+        }
+
+        .led-dot.on {
+            border-color: transparent;
+            box-shadow: 0 0 15px currentColor, 0 0 30px currentColor;
+        }
+
+        .led-dot.flash {
+            animation: ledFlash 0.3s ease-out;
+        }
+
+        @keyframes ledFlash {
+            0% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+
+        .red-timer-display {
+            text-align: center;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .red-timer-display.active {
+            display: block;
+        }
+
+        .red-timer-bar {
+            height: 8px;
+            background: #2a2a3a;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .red-timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--danger), #ff6666);
+            border-radius: 4px;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        .red-timer-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            color: var(--danger);
+            text-shadow: 0 0 20px var(--danger);
+        }
+
+        .red-timer-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .fitness-progress {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .progress-ring {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+        }
+
+        .progress-bg { stroke: #2a2a3a; }
+
+        .progress-fill {
+            stroke: var(--primary);
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.3s ease;
+            filter: drop-shadow(0 0 6px var(--primary));
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .fitness-setting-group {
+            margin-bottom: 16px;
+        }
+
+        .fitness-setting-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .fitness-setting-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fitness-setting-input {
+            flex: 1;
+            background: var(--bg-dark);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .fitness-setting-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+        }
+
+        .fitness-adj-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-dark);
+            color: var(--text);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .fitness-adj-btn:hover {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+
+        .fitness-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .fitness-btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .fitness-btn-full {
+            grid-column: 1 / -1;
+        }
+
+        .fitness-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .fitness-stat-item {
+            text-align: center;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+
+        .fitness-stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .fitness-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .fitness-mode-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .fitness-mode-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-dark);
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .fitness-mode-btn.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .fitness-log {
+            max-height: 180px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .fitness-log .log-entry.detection { color: var(--primary); }
+        .fitness-log .log-entry.led { color: var(--gold); }
+        .fitness-log .log-entry.full { color: var(--warning); font-weight: bold; }
+        .fitness-log .log-entry.round { color: var(--secondary); font-weight: bold; }
+        .fitness-log .log-entry.timeout { color: var(--danger); }
+
+        @media (max-width: 480px) {
+            .count-value { font-size: 3.5rem; }
+            .led-dot { width: 32px; height: 32px; }
+            .fitness-stats-grid { grid-template-columns: 1fr 1fr; }
+            .fitness-btn-grid { grid-template-columns: 1fr; }
+            .fitness-btn-full { grid-column: 1; }
+            .tab-btn { font-size: 0.75rem; padding: 12px 10px; }
+        }
     </style>
 </head>
 <body>
@@ -747,7 +1122,6 @@
                 <h1>RAF RTT TRAINING</h1>
             </div>
             <div class="header-controls">
-                <a href="/counter.html" style="text-decoration:none;padding:8px 16px;border:1px solid #2a2a3a;border-radius:10px;color:#00d4ff;font-weight:600;font-size:0.85rem;transition:all 0.3s;">Ultrasonic Counter</a>
                 <a href="/running_test.html" style="text-decoration:none;padding:8px 16px;border:1px solid #2a2a3a;border-radius:10px;color:#00d4ff;font-weight:600;font-size:0.85rem;transition:all 0.3s;">Hardloop Test</a>
                 <button class="tv-mode-btn" onclick="toggleTVMode()">📺 TV Mode</button>
                 <div class="status-indicator">
@@ -757,7 +1131,16 @@
             </div>
         </header>
 
-        <!-- Main Grid -->
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('schieten')">Schieten</button>
+            <button class="tab-btn" onclick="switchTab('fitness')">Fitness Training</button>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: SCHIETEN -->
+        <!-- ============================================================ -->
+        <div class="tab-content active" id="tab-schieten">
         <div class="main-grid">
             <!-- Left Column -->
             <div class="left-column">
@@ -922,6 +1305,151 @@
                 </div>
             </div>
         </div>
+        </div><!-- /tab-schieten -->
+
+        <!-- ============================================================ -->
+        <!-- TAB: FITNESS TRAINING -->
+        <!-- ============================================================ -->
+        <div class="tab-content" id="tab-fitness">
+            <div class="fitness-grid">
+                <!-- Counter Display -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Ultrasonic Counter</h2>
+                    </div>
+                    <div class="counter-display">
+                        <div class="count-value" id="fitCountValue">0</div>
+                        <div class="count-label">detecties</div>
+                    </div>
+
+                    <div class="round-display">
+                        <div class="round-label">Ronde</div>
+                        <div class="round-value"><span id="fitCurrentRound">0</span> / <span id="fitTotalRounds">--</span></div>
+                    </div>
+
+                    <!-- Red Timer -->
+                    <div class="red-timer-display" id="fitRedTimerDisplay">
+                        <div class="red-timer-text" id="fitRedTimerText">0.0</div>
+                        <div class="red-timer-bar">
+                            <div class="red-timer-fill" id="fitRedTimerFill" style="width: 100%"></div>
+                        </div>
+                        <div class="red-timer-label">Tijd om bij sensor te komen!</div>
+                    </div>
+
+                    <!-- LED Strip -->
+                    <div class="led-strip-visual" id="fitLedStrip"></div>
+
+                    <!-- Progress Ring -->
+                    <div class="fitness-progress">
+                        <div class="progress-ring">
+                            <svg width="100" height="100">
+                                <circle class="progress-bg" cx="50" cy="50" r="42"></circle>
+                                <circle class="progress-fill" id="fitProgressCircle" cx="50" cy="50" r="42"
+                                        stroke-dasharray="263.89" stroke-dashoffset="263.89"></circle>
+                            </svg>
+                            <div class="progress-text"><span id="fitProgressCount">0</span>/<span id="fitProgressTotal">1</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Fitness Stats -->
+                    <div class="fitness-stats-grid">
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatTotal">0</div>
+                            <div class="fitness-stat-label">Totaal</div>
+                        </div>
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatLeds">0/6</div>
+                            <div class="fitness-stat-label">LEDs Aan</div>
+                        </div>
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatRounds">0</div>
+                            <div class="fitness-stat-label">Rondes</div>
+                        </div>
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatSpeed">--</div>
+                            <div class="fitness-stat-label">Gem. Snelheid</div>
+                        </div>
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatTimeouts">0</div>
+                            <div class="fitness-stat-label">Timeouts</div>
+                        </div>
+                        <div class="fitness-stat-item">
+                            <div class="fitness-stat-value" id="fitStatDistance">--</div>
+                            <div class="fitness-stat-label">Afstand (cm)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings & Controls -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Instellingen</h2>
+                    </div>
+
+                    <!-- Training Mode -->
+                    <div class="fitness-mode-selector">
+                        <button class="fitness-mode-btn active" data-fitmode="free" onclick="setFitnessMode('free')">Vrij Tellen</button>
+                        <button class="fitness-mode-btn" data-fitmode="timed" onclick="setFitnessMode('timed')">Timed</button>
+                        <button class="fitness-mode-btn" data-fitmode="interval" onclick="setFitnessMode('interval')">Interval</button>
+                    </div>
+
+                    <div class="fitness-setting-group">
+                        <label class="fitness-setting-label">Detecties per LED</label>
+                        <div class="fitness-setting-row">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitCountsPerLed', -1)">-</button>
+                            <input type="number" class="fitness-setting-input" id="fitCountsPerLed" value="1" min="1" max="100" onchange="applyFit('fitCountsPerLed')">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitCountsPerLed', 1)">+</button>
+                        </div>
+                        <div class="fitness-hint">Na hoeveel keer hand over sensor = 1 LED aan</div>
+                    </div>
+
+                    <div class="fitness-setting-group">
+                        <label class="fitness-setting-label">Rode LED timer (seconden)</label>
+                        <div class="fitness-setting-row">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitRedTimer', -1)">-</button>
+                            <input type="number" class="fitness-setting-input" id="fitRedTimer" value="0" min="0" max="60" onchange="applyFit('fitRedTimer')">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitRedTimer', 1)">+</button>
+                        </div>
+                        <div class="fitness-hint">0 = uit. LED brandt rood, wordt groen als je op tijd bent</div>
+                    </div>
+
+                    <div class="fitness-setting-group">
+                        <label class="fitness-setting-label">Aantal rondes</label>
+                        <div class="fitness-setting-row">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitRounds', -1)">-</button>
+                            <input type="number" class="fitness-setting-input" id="fitRounds" value="0" min="0" max="99" onchange="applyFit('fitRounds')">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitRounds', 1)">+</button>
+                        </div>
+                        <div class="fitness-hint">0 = oneindig. 6 LEDs vol = 1 ronde</div>
+                    </div>
+
+                    <div class="fitness-setting-group">
+                        <label class="fitness-setting-label">Detectie afstand (cm)</label>
+                        <div class="fitness-setting-row">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitDistance', -5)">-</button>
+                            <input type="number" class="fitness-setting-input" id="fitDistance" value="20" min="5" max="100" onchange="applyFit('fitDistance')">
+                            <button class="fitness-adj-btn" onclick="adjustFit('fitDistance', 5)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="fitness-btn-grid">
+                        <button class="btn btn-start" id="fitBtnStart" onclick="startFitness()">START</button>
+                        <button class="btn btn-stop" id="fitBtnStop" onclick="stopFitness()">STOP</button>
+                        <button class="btn btn-pause fitness-btn-full" onclick="resetFitness()">RESET TELLER</button>
+                    </div>
+
+                    <!-- Fitness Log -->
+                    <div style="margin-top: 20px;">
+                        <div class="card-header" style="margin-bottom: 10px;">
+                            <h2>Log</h2>
+                            <button class="btn btn-reset" onclick="clearFitnessLog()" style="padding: 6px 12px; font-size: 0.75rem;">Wis</button>
+                        </div>
+                        <div class="fitness-log" id="fitnessLog"></div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /tab-fitness -->
+
     </div>
 
     <!-- Connection Toast -->
@@ -942,11 +1470,12 @@
 
     <script>
         // ============================================================
-        // BB TARGET SYSTEM - WEBINTERFACE
+        // RAF RTT TRAINING SYSTEM - WEBINTERFACE
         // ============================================================
 
         let ws;
         const MAX_TARGETS = 8;
+        const FIT_NUM_LEDS = 6;
 
         let gameState = {
             running: false,
@@ -1053,6 +1582,22 @@
                     break;
                 case 'highscores':
                     displayHighscores(data.data);
+                    break;
+                // Fitness counter events
+                case 'counterUpdate':
+                    handleFitnessUpdate(data.data);
+                    break;
+                case 'counterDetection':
+                    handleFitnessDetection(data.data);
+                    break;
+                case 'counterFull':
+                    handleFitnessFull(data.data);
+                    break;
+                case 'counterReset':
+                    handleFitnessReset(data.data);
+                    break;
+                case 'counterTimeout':
+                    handleFitnessTimeout(data.data);
                     break;
             }
         }
@@ -1348,11 +1893,399 @@
         }
 
         // ============================================================
+        // TAB SWITCHING
+        // ============================================================
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tab === 'fitness') {
+                initFitnessLeds();
+                send({cmd: 'getCounterState'});
+            }
+        }
+
+        // ============================================================
+        // FITNESS COUNTER
+        // ============================================================
+
+        let fitState = {
+            counting: false,
+            count: 0,
+            ledsLit: 0,
+            countsPerLed: 1,
+            countsSinceLed: 0,
+            currentRound: 0,
+            totalRounds: 0,
+            redTimerSeconds: 0,
+            redTimerActive: false,
+            redTimerRemaining: 0,
+            detectionDistance: 20,
+            mode: 'free',
+            timeouts: 0,
+            lastDetectionTime: 0,
+            avgSpeed: 0,
+            detectionTimes: [],
+            lastDistance: 0
+        };
+
+        let fitRedTimerInterval = null;
+
+        // --- Fitness Event Handlers ---
+
+        function handleFitnessUpdate(data) {
+            if (data.count !== undefined) fitState.count = data.count;
+            if (data.ledsLit !== undefined) fitState.ledsLit = data.ledsLit;
+            if (data.countsPerLed !== undefined) {
+                fitState.countsPerLed = data.countsPerLed;
+                document.getElementById('fitCountsPerLed').value = data.countsPerLed;
+            }
+            if (data.countsSinceLed !== undefined) fitState.countsSinceLed = data.countsSinceLed;
+            if (data.round !== undefined) fitState.currentRound = data.round;
+            if (data.totalRounds !== undefined) fitState.totalRounds = data.totalRounds;
+            if (data.counting !== undefined) fitState.counting = data.counting;
+            if (data.distance !== undefined) fitState.lastDistance = data.distance;
+            updateFitnessUI();
+        }
+
+        function handleFitnessDetection(data) {
+            fitState.count = data.count || fitState.count + 1;
+            fitState.ledsLit = data.ledsLit || fitState.ledsLit;
+            fitState.countsSinceLed = data.countsSinceLed || 0;
+
+            const now = Date.now();
+            if (fitState.lastDetectionTime > 0) {
+                const interval = (now - fitState.lastDetectionTime) / 1000;
+                fitState.detectionTimes.push(interval);
+                if (fitState.detectionTimes.length > 20) fitState.detectionTimes.shift();
+                const avg = fitState.detectionTimes.reduce((a,b) => a+b, 0) / fitState.detectionTimes.length;
+                fitState.avgSpeed = avg.toFixed(1);
+            }
+            fitState.lastDetectionTime = now;
+
+            // Stop red timer if active = on time! Show green
+            if (fitState.redTimerActive) {
+                stopFitRedTimer();
+                showFitGreenSuccess();
+                fitnessLog('OP TIJD! LEDs groen!', 'detection');
+            }
+
+            // Restart red timer
+            if (fitState.redTimerSeconds > 0 && fitState.counting) {
+                setTimeout(() => startFitRedTimer(), 800);
+            }
+
+            updateFitnessUI();
+            fitnessLog(`Detectie #${fitState.count} (LEDs: ${fitState.ledsLit}/${FIT_NUM_LEDS})`, 'detection');
+        }
+
+        function handleFitnessFull(data) {
+            fitState.ledsLit = FIT_NUM_LEDS;
+            fitState.count = data.count || fitState.count;
+            celebrateFitLeds();
+            fitnessLog('ALLE LEDS VOL!', 'full');
+
+            if (fitState.totalRounds > 0) {
+                fitState.currentRound++;
+                fitnessLog(`Ronde ${fitState.currentRound}/${fitState.totalRounds} voltooid!`, 'round');
+
+                if (fitState.currentRound >= fitState.totalRounds) {
+                    fitnessLog('ALLE RONDES VOLTOOID!', 'full');
+                    stopFitness();
+                } else {
+                    setTimeout(() => {
+                        send({cmd: 'counterReset'});
+                        fitState.count = 0;
+                        fitState.ledsLit = 0;
+                        fitState.countsSinceLed = 0;
+                        updateFitnessUI();
+                        fitnessLog(`Ronde ${fitState.currentRound + 1} gestart...`, 'round');
+                        if (fitState.redTimerSeconds > 0) startFitRedTimer();
+                    }, 2000);
+                }
+            }
+            updateFitnessUI();
+        }
+
+        function handleFitnessReset() {
+            fitState.count = 0;
+            fitState.ledsLit = 0;
+            fitState.countsSinceLed = 0;
+            fitState.detectionTimes = [];
+            fitState.avgSpeed = 0;
+            fitState.lastDetectionTime = 0;
+            stopFitRedTimer();
+            updateFitnessUI();
+            fitnessLog('Teller gereset', 'info');
+        }
+
+        function handleFitnessTimeout() {
+            fitState.timeouts++;
+            updateFitnessUI();
+            fitnessLog('TIMEOUT! Te laat bij sensor!', 'timeout');
+        }
+
+        // --- Red Timer ---
+
+        function startFitRedTimer() {
+            stopFitRedTimer();
+            if (fitState.redTimerSeconds <= 0) return;
+
+            fitState.redTimerActive = true;
+            fitState.redTimerRemaining = fitState.redTimerSeconds;
+
+            document.getElementById('fitRedTimerDisplay').classList.add('active');
+            send({cmd: 'counterRedTimer', seconds: fitState.redTimerSeconds});
+
+            fitRedTimerInterval = setInterval(() => {
+                fitState.redTimerRemaining -= 0.1;
+                if (fitState.redTimerRemaining <= 0) {
+                    fitState.redTimerRemaining = 0;
+                    fitState.timeouts++;
+                    stopFitRedTimer();
+                    send({cmd: 'counterTimeout'});
+                    fitnessLog('TIMEOUT! Niet op tijd!', 'timeout');
+                    if (fitState.counting && fitState.redTimerSeconds > 0) {
+                        setTimeout(() => startFitRedTimer(), 1000);
+                    }
+                }
+                updateFitRedTimerUI();
+            }, 100);
+            updateFitRedTimerUI();
+        }
+
+        function stopFitRedTimer() {
+            fitState.redTimerActive = false;
+            if (fitRedTimerInterval) {
+                clearInterval(fitRedTimerInterval);
+                fitRedTimerInterval = null;
+            }
+            document.getElementById('fitRedTimerDisplay').classList.remove('active');
+        }
+
+        function updateFitRedTimerUI() {
+            const pct = (fitState.redTimerRemaining / fitState.redTimerSeconds) * 100;
+            document.getElementById('fitRedTimerFill').style.width = pct + '%';
+            document.getElementById('fitRedTimerText').textContent = fitState.redTimerRemaining.toFixed(1);
+        }
+
+        // --- Green Success Flash ---
+
+        function showFitGreenSuccess() {
+            const strip = document.getElementById('fitLedStrip');
+            const leds = strip.querySelectorAll('.led-dot');
+            leds.forEach(led => {
+                led.style.backgroundColor = '#00ff88';
+                led.style.color = '#00ff88';
+                led.classList.add('on');
+                led.style.boxShadow = '0 0 20px #00ff88, 0 0 40px #00ff88';
+            });
+            const countEl = document.getElementById('fitCountValue');
+            countEl.style.background = '#00ff88';
+            countEl.style.webkitBackgroundClip = 'text';
+            setTimeout(() => {
+                updateFitnessLedStrip();
+                countEl.style.background = 'linear-gradient(135deg, var(--primary), var(--secondary))';
+                countEl.style.webkitBackgroundClip = 'text';
+            }, 600);
+        }
+
+        function celebrateFitLeds() {
+            const strip = document.getElementById('fitLedStrip');
+            const leds = strip.querySelectorAll('.led-dot');
+            let hue = 0;
+            const interval = setInterval(() => {
+                leds.forEach((led, i) => {
+                    const h = (hue + i * 60) % 360;
+                    led.style.backgroundColor = `hsl(${h}, 100%, 50%)`;
+                    led.style.color = `hsl(${h}, 100%, 50%)`;
+                    led.classList.add('on');
+                });
+                hue += 10;
+            }, 50);
+            setTimeout(() => {
+                clearInterval(interval);
+                leds.forEach(led => {
+                    led.style.backgroundColor = '#ffd700';
+                    led.style.color = '#ffd700';
+                });
+            }, 5000);
+        }
+
+        // --- Controls ---
+
+        function startFitness() {
+            fitState.counting = true;
+            fitState.currentRound = 0;
+            fitState.timeouts = 0;
+            fitState.totalRounds = parseInt(document.getElementById('fitRounds').value) || 0;
+            fitState.countsPerLed = parseInt(document.getElementById('fitCountsPerLed').value) || 1;
+            fitState.redTimerSeconds = parseInt(document.getElementById('fitRedTimer').value) || 0;
+            fitState.detectionDistance = parseInt(document.getElementById('fitDistance').value) || 20;
+
+            send({
+                cmd: 'counterStart',
+                countsPerLed: fitState.countsPerLed,
+                redTimer: fitState.redTimerSeconds,
+                rounds: fitState.totalRounds,
+                distance: fitState.detectionDistance
+            });
+
+            document.getElementById('fitTotalRounds').textContent = fitState.totalRounds || '--';
+            document.getElementById('fitCurrentRound').textContent = '0';
+            fitnessLog(`Training gestart! ${fitState.totalRounds > 0 ? fitState.totalRounds + ' rondes' : 'Oneindig'}, ${fitState.countsPerLed} per LED`, 'info');
+            if (fitState.redTimerSeconds > 0) setTimeout(() => startFitRedTimer(), 500);
+            updateFitnessUI();
+        }
+
+        function stopFitness() {
+            fitState.counting = false;
+            stopFitRedTimer();
+            send({cmd: 'counterStop'});
+            fitnessLog('Training gestopt', 'info');
+            updateFitnessUI();
+        }
+
+        function resetFitness() {
+            fitState.count = 0;
+            fitState.ledsLit = 0;
+            fitState.countsSinceLed = 0;
+            fitState.currentRound = 0;
+            fitState.timeouts = 0;
+            fitState.detectionTimes = [];
+            fitState.avgSpeed = 0;
+            stopFitRedTimer();
+            send({cmd: 'counterReset'});
+            fitnessLog('Teller gereset', 'info');
+            updateFitnessUI();
+        }
+
+        function setFitnessMode(mode) {
+            fitState.mode = mode;
+            document.querySelectorAll('.fitness-mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.fitmode === mode);
+            });
+            if (mode === 'timed') {
+                document.getElementById('fitRedTimer').value = 5;
+                fitState.redTimerSeconds = 5;
+                document.getElementById('fitRounds').value = 1;
+            } else if (mode === 'interval') {
+                document.getElementById('fitRedTimer').value = 3;
+                fitState.redTimerSeconds = 3;
+                document.getElementById('fitRounds').value = 5;
+            }
+            send({cmd: 'counterSetMode', mode: mode});
+        }
+
+        // --- Settings ---
+
+        function adjustFit(id, delta) {
+            const input = document.getElementById(id);
+            let val = parseInt(input.value) + delta;
+            val = Math.max(parseInt(input.min), Math.min(parseInt(input.max), val));
+            input.value = val;
+            applyFit(id);
+        }
+
+        function applyFit(id) {
+            const val = parseInt(document.getElementById(id).value);
+            switch(id) {
+                case 'fitCountsPerLed':
+                    fitState.countsPerLed = val;
+                    send({cmd: 'counterSetCountsPerLed', value: val});
+                    document.getElementById('fitProgressTotal').textContent = val;
+                    break;
+                case 'fitRedTimer':
+                    fitState.redTimerSeconds = val;
+                    send({cmd: 'counterSetRedTimer', value: val});
+                    break;
+                case 'fitRounds':
+                    fitState.totalRounds = val;
+                    document.getElementById('fitTotalRounds').textContent = val || '--';
+                    send({cmd: 'counterSetRounds', value: val});
+                    break;
+                case 'fitDistance':
+                    fitState.detectionDistance = val;
+                    send({cmd: 'counterSetDistance', value: val});
+                    break;
+            }
+        }
+
+        // --- UI ---
+
+        function updateFitnessUI() {
+            document.getElementById('fitCountValue').textContent = fitState.count;
+            document.getElementById('fitCurrentRound').textContent = fitState.currentRound;
+            document.getElementById('fitTotalRounds').textContent = fitState.totalRounds || '--';
+
+            updateFitnessLedStrip();
+
+            // Progress ring
+            const circumference = 263.89;
+            const offset = circumference - (fitState.countsSinceLed / fitState.countsPerLed) * circumference;
+            document.getElementById('fitProgressCircle').style.strokeDashoffset = offset;
+            document.getElementById('fitProgressCount').textContent = fitState.countsSinceLed;
+            document.getElementById('fitProgressTotal').textContent = fitState.countsPerLed;
+
+            // Stats
+            document.getElementById('fitStatTotal').textContent = fitState.count;
+            document.getElementById('fitStatLeds').textContent = `${fitState.ledsLit}/${FIT_NUM_LEDS}`;
+            document.getElementById('fitStatRounds').textContent = fitState.currentRound;
+            document.getElementById('fitStatSpeed').textContent = fitState.avgSpeed > 0 ? fitState.avgSpeed + 's' : '--';
+            document.getElementById('fitStatTimeouts').textContent = fitState.timeouts;
+            document.getElementById('fitStatDistance').textContent = fitState.lastDistance > 0 ? fitState.lastDistance.toFixed(0) : '--';
+
+            // Buttons
+            document.getElementById('fitBtnStart').disabled = fitState.counting;
+            document.getElementById('fitBtnStop').disabled = !fitState.counting;
+        }
+
+        function initFitnessLeds() {
+            updateFitnessLedStrip();
+        }
+
+        function updateFitnessLedStrip() {
+            const strip = document.getElementById('fitLedStrip');
+            strip.innerHTML = '';
+            for (let i = 0; i < FIT_NUM_LEDS; i++) {
+                const led = document.createElement('div');
+                led.className = 'led-dot' + (i < fitState.ledsLit ? ' on' : '');
+                led.id = 'fit-led-' + i;
+                if (i < fitState.ledsLit) {
+                    const progress = FIT_NUM_LEDS > 1 ? i / (FIT_NUM_LEDS - 1) : 0;
+                    const r = Math.round(progress * 255);
+                    const g = Math.round(255 - (progress * 85));
+                    led.style.backgroundColor = `rgb(${r}, ${g}, 0)`;
+                    led.style.color = `rgb(${r}, ${g}, 0)`;
+                }
+                strip.appendChild(led);
+            }
+        }
+
+        function fitnessLog(msg, type = '') {
+            const logDiv = document.getElementById('fitnessLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            const time = new Date().toLocaleTimeString('nl-NL');
+            entry.innerHTML = `<span class="log-time">[${time}]</span><span>${msg}</span>`;
+            logDiv.insertBefore(entry, logDiv.firstChild);
+            if (logDiv.children.length > 50) logDiv.lastChild.remove();
+        }
+
+        function clearFitnessLog() {
+            document.getElementById('fitnessLog').innerHTML = '';
+        }
+
+        // ============================================================
         // INITIALIZATION
         // ============================================================
 
         document.addEventListener('DOMContentLoaded', () => {
             initTargets();
+            initFitnessLeds();
             connect();
             log('Raf RTT Training System gestart', 'info');
 
