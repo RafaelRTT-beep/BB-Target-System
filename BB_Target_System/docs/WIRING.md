@@ -1,4 +1,4 @@
-# BB Target System - Bedradingsschema
+# RTT Target System - Bedradingsschema
 
 ## Benodigde Materialen
 
@@ -283,10 +283,10 @@ Gebruik consistente kleuren voor makkelijker debuggen:
 
 **Aanbevolen:** 5V 2A adapter per target
 
-### Hele Systeem (8 targets)
-- Targets: 8 × 400mA = 3.2A
+### Hele Systeem (6 targets)
+- Targets: 6 × 400mA = 2.4A
 - Master: ~200mA
-- **Totaal:** ~3.5A @ 5V
+- **Totaal:** ~2.6A @ 5V
 
 ---
 

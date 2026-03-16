@@ -1,14 +1,14 @@
-# BB Target System
+# RTT Target System
 
-Een professioneel, draadloos schietdoelsysteem voor BB/Airsoft training met real-time feedback.
+Een professioneel, modulair draadloos doelsysteem voor schiettraining, ontwikkeld door Running the Target (RTT).
 
 ```
     ┌─────────────────────────────────────────────────────────────┐
-    │                    BB TARGET SYSTEM                         │
+    │                    RTT TARGET SYSTEM                        │
     │                                                             │
-    │    🎯 8 Draadloze Targets    ⚡ <10ms Responstijd           │
-    │    📱 Webinterface           🏆 Highscores                  │
-    │    🎮 4 Game Modi            📺 TV-compatibel               │
+    │    6 Draadloze Targets       <10ms Responstijd              │
+    │    Webinterface              Leaderboard                    │
+    │    5 Game Modi               TV-compatibel                  │
     │                                                             │
     └─────────────────────────────────────────────────────────────┘
 ```
@@ -17,29 +17,56 @@ Een professioneel, draadloos schietdoelsysteem voor BB/Airsoft training met real
 
 - **Real-time hit detectie** via piezo sensoren op metalen platen
 - **Draadloze communicatie** via ESP-NOW (<10ms latency)
-- **LED feedback** met WS2812B strips per target
-- **Audio feedback** met buzzer per target
-- **Webinterface** voor telefoon en TV
-- **4 Game Modi:**
-  - Free Play - alle targets actief
-  - Sequence - targets in volgorde
-  - Random - willekeurige targets
-  - Shoot/No Shoot - groene vs rode targets
+- **WS2812B LED feedback** (wit flash 300ms bij hit)
+- **Web dashboard** (wit/rood/zwart thema)
+- **Dark mode toggle**
+- **5 Game Modi:**
+  - Free Play — alle targets actief, onbeperkt schieten
+  - Sequence — targets lichten op in volgorde
+  - Random — willekeurige targets activeren
+  - Manual — handmatige target selectie via web UI
+  - Shoot/No-Shoot — rood=shoot(+10), groen=no-shoot(-11), dark mode met flash feedback
 - **Timer & Stopwatch**
-- **Puntentelling & Highscores**
 - **Start/Stop/Pauze/Reset controls**
-- **Numpad voor handmatige target selectie**
+- **Top 3 leaderboard** met persistent opslag
+- **Configureerbare gevoeligheid** (standaard threshold: 100)
+- **OTA update support**
 
 ## Hardware Overzicht
 
 | Component | Functie |
 |-----------|---------|
-| ESP32-S3 | Master Controller |
-| ESP32 WROOM-32 (x8) | Target Nodes |
+| ESP32-S3 | Master Controller (Web UI host) |
+| ESP32 WROOM-32 (x6) | Target Nodes |
 | Piezo sensoren | Hit detectie |
 | WS2812B LED strips | Visuele feedback |
-| Actieve buzzers | Audio feedback |
 | 4mm metalen platen | Doelplaten |
+
+## Architectuur
+
+```
+Master ESP32-S3  ←──ESP-NOW──→  Target Node 1
+  (Web UI host)  ←──ESP-NOW──→  Target Node 2
+  192.168.4.1    ←──ESP-NOW──→  Target Node 3
+                 ←──ESP-NOW──→  Target Node 4
+                 ←──ESP-NOW──→  Target Node 5
+                 ←──ESP-NOW──→  Target Node 6
+```
+
+## Netwerk
+
+- WiFi SSID: `RAF RTT TRAINING SYSTEM`
+- WiFi Password: `12345678`
+- Master MAC: `28:05:A5:07:41:FD`
+- ESP-NOW channel: 1
+
+### Bekende Target MACs
+
+| Target | MAC Adres | Opmerkingen |
+|--------|-----------|-------------|
+| Target 1 | `28:05:A5:07:5D:88` | GPIO34=piezo, D4=LED |
+| Target 2 | `B0:CB:D8:E9:E9:50` | |
+| Target 3 | `B0:CB:D8:E9:E7:DC` | |
 
 ## Quick Start
 
@@ -59,7 +86,7 @@ In Arduino IDE, installeer via Library Manager:
 
 ### 3. Target Nodes Uploaden
 
-Voor elk target (1-8):
+Voor elk target (1-6):
 
 1. Open `target_node/config.h`
 2. Verander `TARGET_ID` naar 1, 2, 3... etc.
@@ -69,8 +96,8 @@ Voor elk target (1-8):
 
 ### 4. Verbinden
 
-1. Verbind met WiFi: `BB_Target_System`
-2. Wachtwoord: `shoot2score`
+1. Verbind met WiFi: `RAF RTT TRAINING SYSTEM`
+2. Wachtwoord: `12345678`
 3. Open browser: `http://192.168.4.1`
 
 ## Mapstructuur
@@ -78,13 +105,14 @@ Voor elk target (1-8):
 ```
 BB_Target_System/
 ├── master_controller/
-│   ├── master_controller.ino   # Master firmware
+│   ├── master_controller.ino   # Master firmware (MasterV3Sec)
 │   └── config.h                # Master configuratie
 ├── target_node/
 │   ├── target_node.ino         # Target firmware
 │   └── config.h                # Target configuratie
 ├── web_interface/
-│   └── index.html              # Uitgebreide webinterface
+│   ├── index.html              # Uitgebreide webinterface
+│   └── running_test.html       # Hardloop test timer
 ├── docs/
 │   ├── ARCHITECTURE.md         # Systeemarchitectuur
 │   ├── WIRING.md               # Bedradingsschema
@@ -97,22 +125,24 @@ BB_Target_System/
 
 | Modus | Beschrijving | Punten |
 |-------|--------------|--------|
-| **Free Play** | Alle targets actief, schiet vrij | +100 per hit |
-| **Sequence** | Raak targets in de juiste volgorde | +100, -10 timeout |
+| **Free Play** | Alle targets actief, onbeperkt schieten | +100 per hit |
+| **Sequence** | Targets lichten op in volgorde | +100, -10 timeout |
 | **Random** | Willekeurig target licht op | +100, +50 snelheidsbonus |
-| **Shoot/No Shoot** | Groene targets = goed, rode = fout | +100/-50 |
+| **Manual** | Handmatige target selectie via web UI | +100 per hit |
+| **Shoot/No-Shoot** | Rood=shoot, groen=no-shoot | +10 / -11 |
 
 ## Webinterface
 
-De webinterface werkt op telefoon, tablet, laptop en TV:
+De webinterface (wit/rood/zwart thema) werkt op telefoon, tablet, laptop en TV:
 
 - **Dashboard** met live target status
 - **Timer** met countdown
 - **Score** met hits/misses teller
 - **Numpad** voor handmatige bediening
-- **Highscores** top 3 van de dag
+- **Top 3 leaderboard** van de dag
 - **Event log** voor debugging
 - **TV Mode** voor grote schermen
+- **Dark mode** toggle
 
 ### Keyboard Shortcuts
 
@@ -121,7 +151,7 @@ De webinterface werkt op telefoon, tablet, laptop en TV:
 | `Spatie` | Start/Pauze |
 | `Escape` | Stop |
 | `R` | Reset |
-| `1-8` | Activeer target |
+| `1-6` | Activeer target |
 | `T` | Toggle TV mode |
 
 ## Bedrading
@@ -145,7 +175,7 @@ Zie `docs/WIRING.md` voor volledige schema's.
 In `target_node/config.h`:
 
 ```cpp
-#define PIEZO_THRESHOLD   150   // Hoger = minder gevoelig
+#define PIEZO_THRESHOLD   100   // Hoger = minder gevoelig (standaard: 100)
 #define PIEZO_DEBOUNCE_MS 100   // Tijd tussen hits
 ```
 
@@ -154,48 +184,42 @@ In `target_node/config.h`:
 In `master_controller/config.h`:
 
 ```cpp
-#define WIFI_SSID       "BB_Target_System"
-#define WIFI_PASSWORD   "shoot2score"
+#define WIFI_SSID       "RAF RTT TRAINING SYSTEM"
+#define WIFI_PASSWORD   "12345678"
 ```
 
-### Game Instellingen
+## Firmware — MasterV3Sec
 
-```cpp
-#define POINTS_HIT        100   // Punten voor hit
-#define POINTS_MISS       -25   // Strafpunten
-#define DEFAULT_GAME_TIME 60    // Speeltijd in seconden
-```
+Laatste grote milestone:
+
+- Security locking mechanisme
+- OTA update support
+- Volledige suite game mode fixes
+- Arduino Core 3.x compatibel
+
+## CloudBridge
+
+`RTT_CloudBridge.h` — header voor het posten van game scores vanuit `endGame()` naar Supabase.
+Doel: leaderboard bridge tussen ESP32 systeem en de RTT App.
 
 ## Troubleshooting
 
 | Probleem | Oplossing |
 |----------|-----------|
 | Target komt niet online | Check voeding, herstart beide |
-| Geen hit detectie | Verhoog `PIEZO_THRESHOLD` |
+| Geen hit detectie | Pas `PIEZO_THRESHOLD` aan in config |
 | LED strip werkt niet | Check DIN verbinding, 5V voeding |
 | WebSocket disconnects | Refresh browser, check WiFi |
 
-## Kosten Schatting
+## Code Conventions
 
-Budget versie (8 targets): **€175-250**
-Premium versie: **€240-315**
-
-Zie `docs/SHOPPING_LIST.md` voor complete lijst.
-
-## Uitbreidingen
-
-Het systeem is modulair en kan uitgebreid worden met:
-
-- Meer targets (tot 20 ondersteund)
-- Bewegende targets (servo motors)
-- Afstandsbediening via fysieke knoppen
-- Bluetooth speaker voor effecten
-- Score database met statistieken
-
-## Licentie
-
-Dit project is vrij te gebruiken en aan te passen voor persoonlijk gebruik.
+- Arduino Core 3.x (niet 2.x)
+- ESP-NOW op channel 1
+- WiFi AP als fallback (password: `12345678`)
+- Web UI: wit/rood/zwart thema, responsive
+- Serial baud rate: 115200
+- Gebruik `delay()` spaarzaam — FreeRTOS tasks waar mogelijk
 
 ---
 
-**Veel schietplezier!** 🎯
+**RTT — Running the Target** | Train real. Train smart.

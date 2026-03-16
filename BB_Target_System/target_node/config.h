@@ -1,5 +1,6 @@
 /**
- * BB Target System - Target Node Configuration
+ * RTT Target System - Target Node Configuration
+ * Running the Target (RTT) — Train real. Train smart.
  *
  * Pas deze instellingen aan per target node
  */
@@ -10,7 +11,7 @@
 // ============================================================================
 // TARGET IDENTIFICATIE
 // ============================================================================
-// BELANGRIJK: Pas dit aan voor elk target (1-8)
+// BELANGRIJK: Pas dit aan voor elk target (1-6)
 #define TARGET_ID           1
 
 // ============================================================================
@@ -32,7 +33,7 @@
 // ============================================================================
 // PIEZO SENSOR INSTELLINGEN
 // ============================================================================
-#define PIEZO_THRESHOLD     150     // Minimum waarde voor hit detectie (0-4095)
+#define PIEZO_THRESHOLD     100     // Minimum waarde voor hit detectie (0-4095)
 #define PIEZO_DEBOUNCE_MS   100     // Debounce tijd in milliseconden
 #define PIEZO_SAMPLE_RATE   1000    // Samples per seconde
 
@@ -66,9 +67,8 @@
 #define HEARTBEAT_INTERVAL  5000    // Heartbeat elke 5 seconden
 #define WIFI_CHANNEL        1       // WiFi kanaal voor ESP-NOW
 
-// Master Controller MAC adres (pas aan naar jouw ESP32-S3)
-// Gebruik de Serial Monitor om het MAC adres te vinden
-uint8_t masterMAC[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; // Broadcast eerst
+// Master Controller MAC adres: 28:05:A5:07:41:FD
+uint8_t masterMAC[] = {0x28, 0x05, 0xA5, 0x07, 0x41, 0xFD};
 
 // ============================================================================
 // GELUID INSTELLINGEN

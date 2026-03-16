@@ -1,8 +1,8 @@
-# BB Target System - Installatie Handleiding
+# RTT Target System - Installatie Handleiding
 
 ## Overzicht
 
-Dit document beschrijft de complete installatie van het BB Target System, van software setup tot eerste gebruik.
+Dit document beschrijft de complete installatie van het RTT Target System, van software setup tot eerste gebruik.
 
 ---
 
@@ -85,15 +85,15 @@ PSRAM: Disabled (of OPI PSRAM als aanwezig)
 
 ```
 ============================================
-   BB TARGET SYSTEM - MASTER CONTROLLER
+   RTT TARGET SYSTEM - MASTER CONTROLLER
 ============================================
 
 WiFi Access Point starten...
 AP IP: 192.168.4.1
-MAC: XX:XX:XX:XX:XX:XX
+MAC: 28:05:A5:07:41:FD
 ESP-NOW geinitialiseerd
 Webserver gestart op poort 80
-Verbind met WiFi: BB_Target_System
+Verbind met WiFi: RAF RTT TRAINING SYSTEM
 Open browser: http://192.168.4.1
 
 Master Controller gereed!
@@ -129,7 +129,7 @@ Partition Scheme: Default 4MB with spiffs
 1. Open `target_node/config.h`
 2. Pas regel aan:
    ```cpp
-   #define TARGET_ID   1   // Verander naar 1, 2, 3, ... 8
+   #define TARGET_ID   1   // Verander naar 1, 2, 3, ... 6
    ```
 3. Sla op
 
@@ -145,7 +145,7 @@ Na upload zie je in Serial Monitor:
 
 ```
 ============================================
-   BB TARGET SYSTEM - TARGET NODE
+   RTT TARGET SYSTEM - TARGET NODE
    Target ID: 1
 ============================================
 
@@ -228,8 +228,8 @@ Volg het bedradingsschema in `WIRING.md`:
 
 ### 5.2 Webinterface Testen
 
-1. Verbind telefoon/laptop met WiFi: **BB_Target_System**
-2. Wachtwoord: **shoot2score**
+1. Verbind telefoon/laptop met WiFi: **RAF RTT TRAINING SYSTEM**
+2. Wachtwoord: **12345678**
 3. Open browser: **http://192.168.4.1**
 4. Je ziet het dashboard met targets
 
@@ -246,7 +246,8 @@ Test elke modus kort:
 1. **Free Play:** Alle targets actief, scoor bij elke hit
 2. **Sequence:** Targets lichten 1 voor 1 op in volgorde
 3. **Random:** Willekeurig target licht op
-4. **Shoot/No Shoot:** Groene targets = goed, rode = fout
+4. **Manual:** Handmatige target selectie via web UI
+5. **Shoot/No-Shoot:** Rood=shoot(+10), groen=no-shoot(-11)
 
 ---
 
@@ -259,9 +260,9 @@ Als hits niet gedetecteerd worden of false positives:
 1. Open `target_node/config.h`
 2. Pas `PIEZO_THRESHOLD` aan:
    ```cpp
-   #define PIEZO_THRESHOLD   150   // Verhoog voor minder gevoelig
+   #define PIEZO_THRESHOLD   100   // Verhoog voor minder gevoelig (standaard: 100)
    ```
-3. Test waarden: 100 (gevoelig) tot 500 (minder gevoelig)
+3. Test waarden: 50 (gevoelig) tot 500 (minder gevoelig)
 4. Upload opnieuw
 
 ### 6.2 LED Helderheid
@@ -303,7 +304,7 @@ Als dubbele hits geregistreerd worden:
 | Spatie | Start/Pauze |
 | Escape | Stop |
 | R | Reset |
-| 1-8 | Activeer target |
+| 1-6 | Activeer target |
 | T | TV Mode |
 
 ### 7.4 TV Weergave

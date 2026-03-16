@@ -1,5 +1,6 @@
 /**
- * BB Target System - Master Controller Configuration
+ * RTT Target System - Master Controller Configuration
+ * Running the Target (RTT) — Train real. Train smart.
  */
 
 #ifndef CONFIG_H
@@ -8,18 +9,20 @@
 // ============================================================================
 // NETWERK INSTELLINGEN
 // ============================================================================
-#define WIFI_SSID           "BB_Target_System"
-#define WIFI_PASSWORD       "shoot2score"  // Minimaal 8 karakters
+#define WIFI_SSID           "RAF RTT TRAINING SYSTEM"
+#define WIFI_PASSWORD       "12345678"  // Minimaal 8 karakters
 #define WIFI_CHANNEL        1
 
 // Webserver
 #define WEB_SERVER_PORT     80
 #define WEBSOCKET_PORT      81
 
+// Master MAC: 28:05:A5:07:41:FD
+
 // ============================================================================
 // SYSTEEM INSTELLINGEN
 // ============================================================================
-#define MAX_TARGETS         8       // Maximum aantal targets
+#define MAX_TARGETS         6       // Maximum aantal targets
 #define TARGET_TIMEOUT_MS   15000   // Target offline na 15 sec zonder heartbeat
 
 // ============================================================================
@@ -32,7 +35,8 @@
 // Punten
 #define POINTS_HIT          100     // Punten voor hit
 #define POINTS_MISS         -25     // Strafpunten voor miss
-#define POINTS_NOSHOOT_HIT  -50     // Strafpunten voor no-shoot hit
+#define POINTS_SHOOT_HIT    10      // Punten voor shoot target (Shoot/No-Shoot)
+#define POINTS_NOSHOOT_HIT  -11     // Strafpunten voor no-shoot hit
 #define POINTS_TIMEOUT      -10     // Strafpunten voor timeout
 #define POINTS_BONUS_FAST   50      // Bonus voor snelle hit (< 1 sec)
 
