@@ -659,15 +659,6 @@ void setup() {
         request->send_P(200, "text/html", index_html);
     });
 
-    // Counter pagina route
-    // Opmerking: counter.html kan via SPIFFS worden geserveerd als het bestand
-    // is geupload naar de ESP32-S3. Zie de web_interface/counter.html file.
-    // Voor SPIFFS: upload counter.html naar /data/counter.html en uncomment:
-    // server.serveStatic("/counter.html", SPIFFS, "/counter.html");
-    //
-    // Zonder SPIFFS: open counter.html direct in browser vanaf een computer
-    // die verbonden is met het Raf_RTT_Training WiFi netwerk.
-
     server.on("/api/counter", HTTP_GET, [](AsyncWebServerRequest *request) {
         StaticJsonDocument<512> doc;
         doc["active"] = counterState.active;
