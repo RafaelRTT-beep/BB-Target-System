@@ -1568,12 +1568,12 @@ void processCounterHit(uint8_t nodeId, uint16_t count) {
     // Check of er een nieuwe LED aan moet
     if (counterState.countsSinceLed >= counterState.countsPerLed) {
         counterState.countsSinceLed = 0;
-        if (counterState.ledsLit < 12) {
+        if (counterState.ledsLit < 6) {
             counterState.ledsLit++;
         }
 
         // Alle LEDs vol?
-        if (counterState.ledsLit >= 12) {
+        if (counterState.ledsLit >= 6) {
             counterState.currentRound++;
 
             // Broadcast counter full event
@@ -1620,7 +1620,7 @@ void processCounterHit(uint8_t nodeId, uint16_t count) {
     serializeJson(doc, json);
     ws.textAll(json);
 
-    Serial.printf("Counter detectie: %d (LEDs: %d/12, Ronde: %d)\n",
+    Serial.printf("Counter detectie: %d (LEDs: %d/6, Ronde: %d)\n",
                   counterState.count, counterState.ledsLit, counterState.currentRound);
 }
 

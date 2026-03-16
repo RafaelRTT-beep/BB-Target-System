@@ -9,7 +9,7 @@
  * Dit is de firmware voor de ultrasone teller node.
  * Features:
  * - HC-SR04 ultrasone sensor voor hand detectie
- * - WS2812B LED strip (12 LEDs) als visuele teller
+ * - WS2812B LED strip (6 LEDs) als visuele teller
  * - Buzzer piept ALTIJD bij detectie
  * - Instelbaar: hoeveel detecties per LED
  * - ESP-NOW communicatie met master controller
@@ -19,7 +19,7 @@
  * - Beweeg je hand over de sensor (binnen detectie afstand)
  * - De buzzer geeft een piep bij ELKE detectie
  * - Na X detecties (instelbaar) gaat er 1 LED branden
- * - Als alle 12 LEDs branden: gouden animatie + lang buzzer signaal
+ * - Als alle 6 LEDs branden: gouden animatie + lang buzzer signaal
  * - Reset via webinterface of master controller
  *
  * INSTALLATIE:

@@ -22,7 +22,7 @@
 
 // LED Strip
 #define LED_PIN             13      // Data pin voor WS2812B
-#define NUM_LEDS            12      // Aantal LEDs op de strip
+#define NUM_LEDS            6       // Aantal LEDs op de strip
 
 // Buzzer
 #define BUZZER_PIN          26      // Buzzer output pin

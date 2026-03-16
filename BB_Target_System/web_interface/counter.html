@@ -701,7 +701,7 @@
                                onchange="applySetting('rounds')">
                         <button class="setting-btn" onclick="adjustSetting('rounds', 1)">+</button>
                     </div>
-                    <div class="setting-hint">0 = oneindig. Na alle 12 LEDs = 1 ronde voltooid. Teller reset automatisch.</div>
+                    <div class="setting-hint">0 = oneindig. Na alle 6 LEDs = 1 ronde voltooid. Teller reset automatisch.</div>
                 </div>
 
                 <!-- Detectie Afstand -->
@@ -733,7 +733,7 @@
                         <div class="stat-label">Totaal</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value" id="statLeds">0/12</div>
+                        <div class="stat-value" id="statLeds">0/6</div>
                         <div class="stat-label">LEDs Aan</div>
                     </div>
                     <div class="stat-item">
@@ -784,7 +784,7 @@
         // STATE
         // ============================================================================
         let ws;
-        const NUM_LEDS = 12;
+        const NUM_LEDS = 6;
         let state = {
             connected: false,
             counting: false,
