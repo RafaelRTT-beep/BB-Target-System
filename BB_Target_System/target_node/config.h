@@ -1,5 +1,5 @@
 /**
- * BB Target System - Target Node Configuration
+ * Raf RTT Training System - Target Node Configuration
  *
  * Pas deze instellingen aan per target node
  */

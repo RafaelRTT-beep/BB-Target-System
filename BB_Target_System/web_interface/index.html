@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>BB Target System</title>
+    <title>Raf RTT Training System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -744,9 +744,11 @@
         <header>
             <div class="logo">
                 <div class="logo-icon">🎯</div>
-                <h1>BB TARGET SYSTEM</h1>
+                <h1>RAF RTT TRAINING</h1>
             </div>
             <div class="header-controls">
+                <a href="/counter.html" style="text-decoration:none;padding:8px 16px;border:1px solid #2a2a3a;border-radius:10px;color:#00d4ff;font-weight:600;font-size:0.85rem;transition:all 0.3s;">Ultrasonic Counter</a>
+                <a href="/running_test.html" style="text-decoration:none;padding:8px 16px;border:1px solid #2a2a3a;border-radius:10px;color:#00d4ff;font-weight:600;font-size:0.85rem;transition:all 0.3s;">Hardloop Test</a>
                 <button class="tv-mode-btn" onclick="toggleTVMode()">📺 TV Mode</button>
                 <div class="status-indicator">
                     <span class="status-dot" id="wsStatus"></span>
@@ -1352,7 +1354,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             initTargets();
             connect();
-            log('BB Target System gestart', 'info');
+            log('Raf RTT Training System gestart', 'info');
 
             // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {

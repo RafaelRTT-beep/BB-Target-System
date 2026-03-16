@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BB TARGET SYSTEM - MASTER CONTROLLER FIRMWARE
+ * RAF RTT TRAINING SYSTEM - MASTER CONTROLLER FIRMWARE
  * ============================================================================
  *
  * Versie: 1.0.0
@@ -40,7 +40,7 @@
 
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BB Target System</title>
+<title>Raf RTT Training System</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#fff;min-height:100vh}
@@ -101,7 +101,7 @@ h1{font-size:2rem;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-back
 <body>
 <div class="container">
 <header>
-<h1>BB Target System</h1>
+<h1>Raf RTT Training System</h1>
 <div><span class="status-dot" id="wsStatus"></span><span id="wsStatusText">Verbinden...</span></div>
 </header>
 
@@ -547,6 +547,25 @@ char currentPlayer[21] = "Speler";
 HighscoreEntry highscores[MAX_HIGHSCORES];
 
 // ============================================================================
+// ULTRASONIC COUNTER STATE
+// ============================================================================
+struct CounterState {
+    bool active;
+    uint16_t count;
+    uint8_t ledsLit;
+    uint8_t countsPerLed;
+    uint8_t countsSinceLed;
+    uint8_t currentRound;
+    uint8_t totalRounds;
+    uint8_t redTimerSeconds;
+    uint8_t detectionDistance;
+    bool nodeOnline;
+    uint32_t lastSeen;
+    String mode;  // "free", "timed", "interval"
+};
+CounterState counterState = {false, 0, 0, 1, 0, 0, 0, 0, 20, false, 0, "free"};
+
+// ============================================================================
 // FORWARD DECLARATIONS
 // ============================================================================
 void onEspNowReceive(const uint8_t *mac, const uint8_t *data, int len);
@@ -575,6 +594,8 @@ void loadHighscores();
 void saveHighscores();
 void checkHighscore(uint32_t score);
 void generateSequence();
+void broadcastCounterState();
+void processCounterHit(uint8_t nodeId, uint16_t count);
 
 // ============================================================================
 // SETUP
@@ -585,7 +606,7 @@ void setup() {
     delay(500);
 
     Serial.println("\n============================================");
-    Serial.println("   BB TARGET SYSTEM - MASTER CONTROLLER");
+    Serial.println("   RAF RTT TRAINING - MASTER CONTROLLER");
     Serial.println("============================================\n");
 
     // Initialize targets array
@@ -636,6 +657,33 @@ void setup() {
     // Webserver routes
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send_P(200, "text/html", index_html);
+    });
+
+    // Counter pagina route
+    // Opmerking: counter.html kan via SPIFFS worden geserveerd als het bestand
+    // is geupload naar de ESP32-S3. Zie de web_interface/counter.html file.
+    // Voor SPIFFS: upload counter.html naar /data/counter.html en uncomment:
+    // server.serveStatic("/counter.html", SPIFFS, "/counter.html");
+    //
+    // Zonder SPIFFS: open counter.html direct in browser vanaf een computer
+    // die verbonden is met het Raf_RTT_Training WiFi netwerk.
+
+    server.on("/api/counter", HTTP_GET, [](AsyncWebServerRequest *request) {
+        StaticJsonDocument<512> doc;
+        doc["active"] = counterState.active;
+        doc["count"] = counterState.count;
+        doc["ledsLit"] = counterState.ledsLit;
+        doc["countsPerLed"] = counterState.countsPerLed;
+        doc["countsSinceLed"] = counterState.countsSinceLed;
+        doc["currentRound"] = counterState.currentRound;
+        doc["totalRounds"] = counterState.totalRounds;
+        doc["redTimerSeconds"] = counterState.redTimerSeconds;
+        doc["detectionDistance"] = counterState.detectionDistance;
+        doc["nodeOnline"] = counterState.nodeOnline;
+        doc["mode"] = counterState.mode;
+        String response;
+        serializeJson(doc, response);
+        request->send(200, "application/json", response);
     });
 
     server.on("/api/state", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -707,6 +755,28 @@ void onEspNowReceive(const uint8_t *mac, const uint8_t *data, int len) {
 
     TargetMessage *msg = (TargetMessage *)data;
     uint8_t targetId = msg->targetId;
+
+    // Counter node (ID 9+)
+    if (targetId >= 9) {
+        counterState.nodeOnline = true;
+        counterState.lastSeen = millis();
+
+        switch (msg->type) {
+            case MSG_HIT: // Detectie event
+                if (counterState.active) {
+                    processCounterHit(targetId, msg->intensity);
+                }
+                break;
+            case MSG_HEARTBEAT:
+                // Counter node heartbeat - update online status
+                break;
+            case 10: // MSG_COUNTER_UPDATE
+                counterState.count = msg->intensity;
+                broadcastCounterState();
+                break;
+        }
+        return;
+    }
 
     if (targetId < 1 || targetId > MAX_TARGETS) return;
 
@@ -865,6 +935,108 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
             highscores[i].date = 0;
         }
         saveHighscores();
+    }
+    // ================================================================
+    // COUNTER COMMANDO'S
+    // ================================================================
+    else if (strcmp(cmd, "counterStart") == 0) {
+        counterState.active = true;
+        counterState.count = 0;
+        counterState.ledsLit = 0;
+        counterState.countsSinceLed = 0;
+        counterState.currentRound = 0;
+        if (doc.containsKey("countsPerLed")) counterState.countsPerLed = doc["countsPerLed"];
+        if (doc.containsKey("redTimer")) counterState.redTimerSeconds = doc["redTimer"];
+        if (doc.containsKey("rounds")) counterState.totalRounds = doc["rounds"];
+        if (doc.containsKey("distance")) counterState.detectionDistance = doc["distance"];
+
+        // Stuur activate naar counter node
+        MasterMessage msg;
+        msg.cmd = CMD_ACTIVATE;
+        msg.targetId = 9; // Counter node ID
+        msg.sound = 1;
+        msg.r = 0; msg.g = 255; msg.b = 0;
+        msg.param1 = counterState.countsPerLed;
+        sendToAllTargets(msg);
+
+        Serial.println("Counter gestart");
+        broadcastCounterState();
+    }
+    else if (strcmp(cmd, "counterStop") == 0) {
+        counterState.active = false;
+        MasterMessage msg;
+        msg.cmd = CMD_DEACTIVATE;
+        msg.targetId = 9;
+        sendToAllTargets(msg);
+        Serial.println("Counter gestopt");
+        broadcastCounterState();
+    }
+    else if (strcmp(cmd, "counterReset") == 0) {
+        counterState.count = 0;
+        counterState.ledsLit = 0;
+        counterState.countsSinceLed = 0;
+        counterState.currentRound = 0;
+
+        MasterMessage msg;
+        msg.cmd = CMD_RESET;
+        msg.targetId = 9;
+        sendToAllTargets(msg);
+        Serial.println("Counter gereset");
+        broadcastCounterState();
+    }
+    else if (strcmp(cmd, "counterSetCountsPerLed") == 0) {
+        counterState.countsPerLed = doc["value"].as<uint8_t>();
+
+        MasterMessage msg;
+        msg.cmd = 20; // CMD_SET_COUNTS_PER_LED
+        msg.targetId = 9;
+        msg.param1 = counterState.countsPerLed;
+        sendToAllTargets(msg);
+        broadcastCounterState();
+    }
+    else if (strcmp(cmd, "counterSetRedTimer") == 0) {
+        counterState.redTimerSeconds = doc["value"].as<uint8_t>();
+        broadcastCounterState();
+    }
+    else if (strcmp(cmd, "counterSetRounds") == 0) {
+        counterState.totalRounds = doc["value"].as<uint8_t>();
+        broadcastCounterState();
+    }
+    else if (strcmp(cmd, "counterSetDistance") == 0) {
+        counterState.detectionDistance = doc["value"].as<uint8_t>();
+        broadcastCounterState();
+    }
+    else if (strcmp(cmd, "counterSetMode") == 0) {
+        counterState.mode = doc["mode"].as<String>();
+        broadcastCounterState();
+    }
+    else if (strcmp(cmd, "counterRedTimer") == 0) {
+        // Stuur rood licht commando naar counter node
+        MasterMessage msg;
+        msg.cmd = CMD_SET_COLOR;
+        msg.targetId = 9;
+        msg.r = 255; msg.g = 0; msg.b = 0; // ROOD
+        sendToAllTargets(msg);
+    }
+    else if (strcmp(cmd, "counterTimeout") == 0) {
+        // Timeout event - stuur fout geluid naar node
+        MasterMessage msg;
+        msg.cmd = CMD_PLAY_SOUND;
+        msg.targetId = 9;
+        msg.sound = SND_WRONG;
+        sendToAllTargets(msg);
+
+        // Broadcast timeout naar webclients
+        StaticJsonDocument<128> timeoutDoc;
+        timeoutDoc["event"] = "counterTimeout";
+        JsonObject d = timeoutDoc.createNestedObject("data");
+        d["count"] = counterState.count;
+        String json;
+        serializeJson(timeoutDoc, json);
+        ws.textAll(json);
+    }
+    else if (strcmp(cmd, "getCounterState") == 0) {
+        broadcastCounterState();
     }
 }
 
@@ -1362,6 +1534,94 @@ void checkTargetTimeout() {
             ws.textAll(json);
         }
     }
+}
+
+// ============================================================================
+// COUNTER FUNCTIES
+// ============================================================================
+
+void broadcastCounterState() {
+    StaticJsonDocument<512> doc;
+    doc["event"] = "counterUpdate";
+    JsonObject data = doc.createNestedObject("data");
+    data["count"] = counterState.count;
+    data["ledsLit"] = counterState.ledsLit;
+    data["countsPerLed"] = counterState.countsPerLed;
+    data["countsSinceLed"] = counterState.countsSinceLed;
+    data["round"] = counterState.currentRound;
+    data["totalRounds"] = counterState.totalRounds;
+    data["counting"] = counterState.active;
+    data["nodeOnline"] = counterState.nodeOnline;
+    data["redTimer"] = counterState.redTimerSeconds;
+    data["distance"] = counterState.detectionDistance;
+    data["mode"] = counterState.mode;
+
+    String json;
+    serializeJson(doc, json);
+    ws.textAll(json);
+}
+
+void processCounterHit(uint8_t nodeId, uint16_t count) {
+    counterState.count = count;
+    counterState.countsSinceLed++;
+
+    // Check of er een nieuwe LED aan moet
+    if (counterState.countsSinceLed >= counterState.countsPerLed) {
+        counterState.countsSinceLed = 0;
+        if (counterState.ledsLit < 12) {
+            counterState.ledsLit++;
+        }
+
+        // Alle LEDs vol?
+        if (counterState.ledsLit >= 12) {
+            counterState.currentRound++;
+
+            // Broadcast counter full event
+            StaticJsonDocument<256> doc;
+            doc["event"] = "counterFull";
+            JsonObject data = doc.createNestedObject("data");
+            data["count"] = counterState.count;
+            data["round"] = counterState.currentRound;
+            data["totalRounds"] = counterState.totalRounds;
+            String json;
+            serializeJson(doc, json);
+            ws.textAll(json);
+
+            Serial.printf("Counter VOL! Ronde %d/%d\n",
+                          counterState.currentRound, counterState.totalRounds);
+
+            // Auto-reset als er meer rondes zijn
+            if (counterState.totalRounds == 0 ||
+                counterState.currentRound < counterState.totalRounds) {
+                // Reset wordt door webinterface afgehandeld na animatie
+            }
+        }
+    }
+
+    // Stuur groene feedback als hand op tijd is gedetecteerd (bij rode timer)
+    if (counterState.redTimerSeconds > 0) {
+        MasterMessage msg;
+        msg.cmd = CMD_SET_COLOR;
+        msg.targetId = nodeId;
+        msg.r = 0; msg.g = 255; msg.b = 0; // GROEN = op tijd!
+        sendToAllTargets(msg);
+    }
+
+    // Broadcast detection event naar webclients
+    StaticJsonDocument<256> doc;
+    doc["event"] = "counterDetection";
+    JsonObject data = doc.createNestedObject("data");
+    data["count"] = counterState.count;
+    data["ledsLit"] = counterState.ledsLit;
+    data["countsSinceLed"] = counterState.countsSinceLed;
+    data["round"] = counterState.currentRound;
+
+    String json;
+    serializeJson(doc, json);
+    ws.textAll(json);
+
+    Serial.printf("Counter detectie: %d (LEDs: %d/12, Ronde: %d)\n",
+                  counterState.count, counterState.ledsLit, counterState.currentRound);
 }
 
 // ============================================================================
