@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTT Fitness Test - Admin</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<header>
+    <h1>RTT Fitness Test</h1>
+    <span id="connStatus" class="badge badge-offline">Verbinden...</span>
+</header>
+
+<main class="container">
+
+    <!-- ============================================================ -->
+    <!-- SESSIE SETUP -->
+    <!-- ============================================================ -->
+    <div id="setupSection" class="card">
+        <h2>Nieuwe Sessie</h2>
+        <p style="margin-bottom:12px;color:var(--gray-600)">Voer deelnemersnamen in (één per regel, max 15)</p>
+        <textarea id="namesInput" rows="10" placeholder="Jan Jansen&#10;Piet Pieters&#10;Klaas Kansen&#10;..."></textarea>
+        <div style="margin-top:12px">
+            <button onclick="createSession()" class="btn btn-accent">Sessie Aanmaken</button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- DASHBOARD (verborgen tot sessie aangemaakt) -->
+    <!-- ============================================================ -->
+    <div id="dashboardSection" style="display:none">
+
+        <!-- Oefening tabs -->
+        <div class="exercise-tabs">
+            <button class="tab active" data-ex="0" onclick="selectExercise(0)">Sprint</button>
+            <button class="tab" data-ex="1" onclick="selectExercise(1)">Hardlopen</button>
+            <button class="tab" data-ex="2" onclick="selectExercise(2)">Schietoefening</button>
+        </div>
+
+        <!-- Controls -->
+        <div class="card controls">
+            <span class="admin-timer" id="adminTimer">00:00</span>
+            <button onclick="startExercise()" id="btnStart" class="btn btn-accent">&#9654; START</button>
+            <button onclick="stopExercise()" id="btnStop" class="btn btn-dark" disabled>&#9724; STOP</button>
+            <button onclick="resetExercise()" class="btn btn-outline">&#8635; Reset</button>
+            <button onclick="nextExercise()" class="btn btn-outline">&#8594; Volgende</button>
+        </div>
+
+        <!-- Resultaten tabel -->
+        <div class="card">
+            <h2>Resultaten &mdash; <span id="exerciseTitle">Sprint</span></h2>
+            <div style="overflow-x:auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Naam</th>
+                            <th>Buddy</th>
+                            <th>Status</th>
+                            <th>Tijd</th>
+                            <th id="scoreCol" style="display:none">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Buddy toewijzing -->
+        <details class="card">
+            <summary><h2>Buddy Toewijzing</h2></summary>
+            <div id="buddyAssignment"></div>
+        </details>
+
+        <!-- QR codes -->
+        <details class="card">
+            <summary><h2>QR Codes voor Buddy's</h2></summary>
+            <p style="margin-bottom:12px;color:var(--gray-600)">Laat buddy's deze QR code scannen om de timer te openen.</p>
+            <div id="qrCodes" class="qr-grid"></div>
+        </details>
+
+        <!-- Export & reset -->
+        <div class="card export-section">
+            <a href="/api/results" target="_blank" class="btn btn-outline">JSON Export</a>
+            <a href="/api/export" class="btn btn-outline">CSV Download</a>
+            <button onclick="clearSession()" class="btn btn-danger">Sessie Wissen</button>
+        </div>
+    </div>
+</main>
+
+<script>
+const MAX_BUDDIES = 8;
+const EXERCISE_NAMES = ['Sprint', 'Hardlopen', 'Schietoefening'];
+
+let ws;
+let state = { participantCount: 0, participants: [], results: [], currentExercise: 0, exerciseActive: false, elapsedMs: 0 };
+let selectedExercise = 0;
+let adminTimerStart = null;
+let adminTimerInterval = null;
+let qrGenerated = false;
+
+// ============================================================
+// WEBSOCKET
+// ============================================================
+
+function connectWebSocket() {
+    ws = new WebSocket('ws://' + location.hostname + '/ws');
+
+    ws.onopen = function() {
+        setConnStatus(true);
+        ws.send(JSON.stringify({ cmd: 'getState' }));
+    };
+
+    ws.onclose = function() {
+        setConnStatus(false);
+        setTimeout(connectWebSocket, 2000);
+    };
+
+    ws.onmessage = function(e) {
+        var msg = JSON.parse(e.data);
+
+        if (msg.event === 'state') {
+            state = msg.data;
+            // Sync admin timer als oefening actief is
+            if (state.exerciseActive) {
+                selectedExercise = state.currentExercise;
+                startAdminTimer(state.elapsedMs);
+            } else {
+                stopAdminTimer();
+            }
+            updateUI();
+        }
+        else if (msg.event === 'exerciseStart') {
+            state.exerciseActive = true;
+            state.currentExercise = msg.data.exercise;
+            selectedExercise = msg.data.exercise;
+            startAdminTimer(0);
+            updateUI();
+        }
+        else if (msg.event === 'exerciseStop') {
+            state.exerciseActive = false;
+            stopAdminTimer();
+            updateUI();
+        }
+    };
+}
+
+function setConnStatus(online) {
+    var el = document.getElementById('connStatus');
+    el.textContent = online ? 'Verbonden' : 'Geen verbinding';
+    el.className = 'badge ' + (online ? 'badge-online' : 'badge-offline');
+}
+
+// ============================================================
+// ADMIN TIMER
+// ============================================================
+
+function startAdminTimer(offsetMs) {
+    adminTimerStart = Date.now() - (offsetMs || 0);
+    if (adminTimerInterval) clearInterval(adminTimerInterval);
+    adminTimerInterval = setInterval(updateAdminTimerDisplay, 100);
+    updateAdminTimerDisplay();
+}
+
+function stopAdminTimer() {
+    if (adminTimerInterval) {
+        clearInterval(adminTimerInterval);
+        adminTimerInterval = null;
+    }
+}
+
+function updateAdminTimerDisplay() {
+    if (!adminTimerStart) return;
+    var elapsed = Date.now() - adminTimerStart;
+    var totalSec = Math.floor(elapsed / 1000);
+    var min = Math.floor(totalSec / 60);
+    var sec = totalSec % 60;
+    document.getElementById('adminTimer').textContent =
+        min.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0');
+}
+
+// ============================================================
+// COMMANDS
+// ============================================================
+
+function createSession() {
+    var text = document.getElementById('namesInput').value.trim();
+    var names = text.split('\n').map(function(n) { return n.trim(); }).filter(function(n) { return n.length > 0; });
+    if (names.length === 0) { alert('Voer minstens één naam in.'); return; }
+    if (names.length > 15) { alert('Maximaal 15 deelnemers.'); return; }
+    ws.send(JSON.stringify({ cmd: 'createSession', participants: names }));
+}
+
+function selectExercise(idx) {
+    selectedExercise = idx;
+    updateTabs();
+    updateResultsTable();
+    updateControls();
+}
+
+function startExercise() {
+    ws.send(JSON.stringify({ cmd: 'startExercise', exercise: selectedExercise }));
+}
+
+function stopExercise() {
+    ws.send(JSON.stringify({ cmd: 'stopExercise', exercise: selectedExercise }));
+}
+
+function resetExercise() {
+    if (!confirm('Resultaten voor ' + EXERCISE_NAMES[selectedExercise] + ' wissen?')) return;
+    ws.send(JSON.stringify({ cmd: 'resetExercise', exercise: selectedExercise }));
+    document.getElementById('adminTimer').textContent = '00:00';
+}
+
+function nextExercise() {
+    ws.send(JSON.stringify({ cmd: 'nextExercise' }));
+    if (selectedExercise < 2) {
+        selectedExercise++;
+        updateTabs();
+        updateResultsTable();
+        updateControls();
+    }
+}
+
+function assignBuddy(pIdx, buddyId) {
+    ws.send(JSON.stringify({ cmd: 'assignBuddy', participant: pIdx, buddy: parseInt(buddyId) }));
+}
+
+function clearSession() {
+    if (!confirm('Hele sessie wissen? Alle resultaten gaan verloren.')) return;
+    ws.send(JSON.stringify({ cmd: 'clearSession' }));
+    qrGenerated = false;
+    document.getElementById('adminTimer').textContent = '00:00';
+}
+
+// ============================================================
+// UI UPDATES
+// ============================================================
+
+function updateUI() {
+    var hasSession = state.participantCount > 0;
+    document.getElementById('setupSection').style.display = hasSession ? 'none' : 'block';
+    document.getElementById('dashboardSection').style.display = hasSession ? 'block' : 'none';
+
+    if (hasSession) {
+        updateTabs();
+        updateResultsTable();
+        updateBuddyAssignment();
+        updateControls();
+        generateQRCodes();
+    }
+}
+
+function updateTabs() {
+    var tabs = document.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.toggle('active', i === selectedExercise);
+    }
+    document.getElementById('exerciseTitle').textContent = EXERCISE_NAMES[selectedExercise];
+    document.getElementById('scoreCol').style.display = selectedExercise === 2 ? '' : 'none';
+}
+
+function updateResultsTable() {
+    var tbody = document.getElementById('resultsBody');
+    tbody.innerHTML = '';
+    var ex = selectedExercise;
+
+    // Resultaten verzamelen voor sortering
+    var rows = [];
+    for (var i = 0; i < state.participantCount; i++) {
+        rows.push({ idx: i, p: state.participants[i], r: state.results[i][ex] });
+    }
+
+    // Sorteren: klaar eerst (op tijd), dan bezig, dan wachtend
+    rows.sort(function(a, b) {
+        if (a.r.completed && !b.r.completed) return -1;
+        if (!a.r.completed && b.r.completed) return 1;
+        if (a.r.completed && b.r.completed) return a.r.timeMs - b.r.timeMs;
+        return a.idx - b.idx;
+    });
+
+    for (var j = 0; j < rows.length; j++) {
+        var row = rows[j];
+        var tr = document.createElement('tr');
+
+        var statusText, statusClass;
+        if (row.r.completed) {
+            statusText = 'Klaar';
+            statusClass = 'status-done';
+        } else if (state.exerciseActive && state.currentExercise === ex) {
+            statusText = 'Bezig';
+            statusClass = 'status-active';
+        } else {
+            statusText = 'Wachtend';
+            statusClass = 'status-waiting';
+        }
+
+        var timeStr = row.r.completed ? formatTime(ex, row.r.timeMs) : '&mdash;';
+        var scoreCell = ex === 2 ? '<td>' + (row.r.completed ? row.r.score : '&mdash;') + '</td>' : '';
+
+        tr.innerHTML =
+            '<td>' + (row.idx + 1) + '</td>' +
+            '<td><strong>' + escapeHtml(row.p.name) + '</strong></td>' +
+            '<td>' + (row.p.buddyId > 0 ? 'Buddy ' + row.p.buddyId : '&mdash;') + '</td>' +
+            '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
+            '<td>' + timeStr + '</td>' +
+            scoreCell;
+
+        tbody.appendChild(tr);
+    }
+}
+
+function updateBuddyAssignment() {
+    var div = document.getElementById('buddyAssignment');
+    div.innerHTML = '';
+    for (var i = 0; i < state.participantCount; i++) {
+        var p = state.participants[i];
+        var row = document.createElement('div');
+        row.className = 'buddy-row';
+
+        var options = '<option value="0"' + (p.buddyId === 0 ? ' selected' : '') + '>-- Geen --</option>';
+        for (var b = 1; b <= MAX_BUDDIES; b++) {
+            options += '<option value="' + b + '"' + (p.buddyId === b ? ' selected' : '') + '>Buddy ' + b + '</option>';
+        }
+
+        row.innerHTML =
+            '<span>' + escapeHtml(p.name) + '</span>' +
+            '<select onchange="assignBuddy(' + i + ', this.value)">' + options + '</select>';
+        div.appendChild(row);
+    }
+}
+
+function updateControls() {
+    var active = state.exerciseActive && state.currentExercise === selectedExercise;
+    document.getElementById('btnStart').disabled = active;
+    document.getElementById('btnStop').disabled = !active;
+}
+
+function generateQRCodes() {
+    if (qrGenerated) return;
+    if (typeof QRCode === 'undefined') return;
+
+    var div = document.getElementById('qrCodes');
+    div.innerHTML = '';
+
+    for (var i = 1; i <= MAX_BUDDIES; i++) {
+        var url = 'http://' + location.hostname + '/buddy?id=' + i;
+        var item = document.createElement('div');
+        item.className = 'qr-item';
+        item.innerHTML = '<h3>Buddy ' + i + '</h3><div id="qr-' + i + '"></div><small>' + url + '</small>';
+        div.appendChild(item);
+
+        new QRCode(document.getElementById('qr-' + i), {
+            text: url,
+            width: 120,
+            height: 120,
+            colorDark: '#000000',
+            colorLight: '#ffffff'
+        });
+    }
+    qrGenerated = true;
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function formatTime(exercise, ms) {
+    if (exercise === 1) {
+        var totalSec = Math.floor(ms / 1000);
+        var min = Math.floor(totalSec / 60);
+        var sec = totalSec % 60;
+        var hun = Math.floor((ms % 1000) / 10);
+        return min + ':' + sec.toString().padStart(2, '0') + '.' + hun.toString().padStart(2, '0');
+    }
+    return (ms / 1000).toFixed(2) + ' s';
+}
+
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Start
+connectWebSocket();
+</script>
+</body>
+</html>

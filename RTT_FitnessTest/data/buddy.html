@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>RTT Fitness Test - Buddy</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #E3263A;
+            --green: #27ae60;
+            --black: #000000;
+            --white: #ffffff;
+            --gray: #999;
+            --font: 'DM Sans', system-ui, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: var(--font);
+            background: var(--white);
+            color: var(--black);
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Header */
+        .header {
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent);
+            flex-shrink: 0;
+        }
+        .header h1 { font-size: 1rem; }
+        .conn-online { color: var(--green); font-size: 0.8rem; font-weight: 600; }
+        .conn-offline { color: var(--accent); font-size: 0.8rem; font-weight: 600; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            flex-shrink: 0;
+            background: #f0f0f0;
+        }
+        .tabs:empty { display: none; }
+        .buddy-tab {
+            flex: 1;
+            padding: 10px 8px;
+            border: none;
+            background: transparent;
+            font-family: var(--font);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.15s;
+        }
+        .buddy-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            background: var(--white);
+        }
+
+        /* Timer area */
+        .timer-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .participant-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .exercise-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-bottom: 4px;
+        }
+        .status-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .timer {
+            font-size: min(20vw, 6rem);
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        /* Result display */
+        .result {
+            display: none;
+            text-align: center;
+            margin-top: 12px;
+        }
+        .result .checkmark {
+            font-size: 3rem;
+            color: var(--green);
+            line-height: 1;
+        }
+        .result .result-time {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Score input */
+        .score-section {
+            display: none;
+            margin-top: 16px;
+            text-align: center;
+        }
+        .score-section label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .score-section input {
+            font-family: var(--font);
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            width: 120px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+        }
+        .score-section input:focus { border-color: var(--accent); }
+        .score-section button {
+            display: block;
+            margin: 10px auto 0;
+            padding: 10px 24px;
+            background: var(--accent);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-family: var(--font);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .score-saved {
+            display: none;
+            color: var(--green);
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        /* STOP button */
+        .stop-button {
+            flex-shrink: 0;
+            height: 35vh;
+            min-height: 120px;
+            border: none;
+            background: #ccc;
+            color: var(--white);
+            font-family: var(--font);
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .stop-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* States */
+        .state-waiting .status-text { color: var(--gray); }
+        .state-waiting .timer { color: #ccc; }
+
+        .state-active { background: #fff5f5; }
+        .state-active .status-text { color: var(--accent); }
+        .state-active .timer { color: var(--accent); }
+        .state-active + .stop-button:not(:disabled) {
+            background: var(--accent);
+        }
+        .state-active + .stop-button:not(:disabled):active {
+            background: #a01020;
+            transform: scale(0.98);
+        }
+
+        .state-done { background: #f0faf4; }
+        .state-done .status-text { color: var(--green); }
+        .state-done .timer { color: var(--green); }
+        .state-done + .stop-button {
+            background: var(--green);
+        }
+
+        /* Error */
+        .error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 40px;
+            text-align: center;
+            color: var(--accent);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1 id="buddyTitle">Buddy</h1>
+    <span id="connStatus" class="conn-offline">Verbinden...</span>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="timer-area state-waiting" id="timerArea">
+    <div class="participant-name" id="participantName">&mdash;</div>
+    <div class="exercise-label" id="exerciseLabel">Wachtend op sessie...</div>
+    <div class="status-text" id="statusText">&nbsp;</div>
+    <div class="timer" id="timer">00:00.00</div>
+    <div class="result" id="result">
+        <div class="checkmark">&#10003;</div>
+        <div class="result-time" id="resultTime"></div>
+    </div>
+    <div class="score-section" id="scoreSection">
+        <label>Score / Punten:</label>
+        <input type="number" id="scoreInput" min="0" inputmode="numeric" placeholder="0">
+        <button onclick="submitScore()">Opslaan</button>
+        <div class="score-saved" id="scoreSaved">Score opgeslagen!</div>
+    </div>
+</div>
+
+<button class="stop-button" id="stopBtn" onclick="stopTimer()" disabled>STOP</button>
+
+<script>
+var EXERCISE_NAMES = ['Sprint', 'Hardlopen', 'Schietoefening'];
+
+var ws;
+var buddyId = 0;
+var state = { participantCount: 0, participants: [], results: [], currentExercise: -1, exerciseActive: false, elapsedMs: 0 };
+var myParticipants = [];
+var activeTab = 0;
+var timerStart = null;
+var timerInterval = null;
+var stoppedTimes = {};  // participantIdx -> timeMs
+
+// ============================================================
+// INIT
+// ============================================================
+
+function init() {
+    var params = new URLSearchParams(location.search);
+    buddyId = parseInt(params.get('id')) || 0;
+
+    if (!buddyId) {
+        document.body.innerHTML = '<div class="error">Geen buddy ID opgegeven.<br>Scan de QR code of open /buddy?id=X</div>';
+        return;
+    }
+
+    document.getElementById('buddyTitle').textContent = 'Buddy ' + buddyId;
+    connectWebSocket();
+}
+
+// ============================================================
+// WEBSOCKET
+// ============================================================
+
+function connectWebSocket() {
+    ws = new WebSocket('ws://' + location.hostname + '/ws');
+
+    ws.onopen = function() {
+        setConn(true);
+        ws.send(JSON.stringify({ cmd: 'getState' }));
+    };
+
+    ws.onclose = function() {
+        setConn(false);
+        setTimeout(connectWebSocket, 2000);
+    };
+
+    ws.onmessage = function(e) {
+        var msg = JSON.parse(e.data);
+
+        if (msg.event === 'state') {
+            state = msg.data;
+            findMyParticipants();
+
+            // Sync timer als oefening actief is
+            if (state.exerciseActive && !timerStart) {
+                stoppedTimes = {};
+                // Herstel gestopte tijden uit state
+                for (var i = 0; i < myParticipants.length; i++) {
+                    var pIdx = myParticipants[i];
+                    if (state.results[pIdx][state.currentExercise].completed) {
+                        stoppedTimes[pIdx] = state.results[pIdx][state.currentExercise].timeMs;
+                    }
+                }
+                startLocalTimer(state.elapsedMs);
+            }
+            if (!state.exerciseActive) {
+                stopLocalTimer();
+            }
+
+            updateDisplay();
+        }
+        else if (msg.event === 'exerciseStart') {
+            state.exerciseActive = true;
+            state.currentExercise = msg.data.exercise;
+            stoppedTimes = {};
+            startLocalTimer(0);
+            updateDisplay();
+        }
+        else if (msg.event === 'exerciseStop') {
+            state.exerciseActive = false;
+            stopLocalTimer();
+            updateDisplay();
+        }
+    };
+}
+
+function setConn(online) {
+    var el = document.getElementById('connStatus');
+    el.textContent = online ? 'Verbonden' : 'Geen verbinding';
+    el.className = online ? 'conn-online' : 'conn-offline';
+}
+
+// ============================================================
+// PARTICIPANTS
+// ============================================================
+
+function findMyParticipants() {
+    myParticipants = [];
+    for (var i = 0; i < state.participantCount; i++) {
+        if (state.participants[i].buddyId === buddyId) {
+            myParticipants.push(i);
+        }
+    }
+    if (activeTab >= myParticipants.length) activeTab = 0;
+    buildTabs();
+}
+
+function buildTabs() {
+    var tabsDiv = document.getElementById('tabs');
+    tabsDiv.innerHTML = '';
+    if (myParticipants.length <= 1) return;
+
+    for (var i = 0; i < myParticipants.length; i++) {
+        var btn = document.createElement('button');
+        btn.className = 'buddy-tab' + (i === activeTab ? ' active' : '');
+        btn.textContent = state.participants[myParticipants[i]].name;
+        btn.setAttribute('data-idx', i);
+        btn.onclick = function() {
+            activeTab = parseInt(this.getAttribute('data-idx'));
+            buildTabs();
+            updateDisplay();
+        };
+        tabsDiv.appendChild(btn);
+    }
+}
+
+// ============================================================
+// TIMER
+// ============================================================
+
+function startLocalTimer(offsetMs) {
+    timerStart = Date.now() - (offsetMs || 0);
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(tickTimer, 33);
+}
+
+function stopLocalTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    timerStart = null;
+}
+
+function tickTimer() {
+    if (!timerStart) return;
+    var pIdx = myParticipants[activeTab];
+    if (pIdx === undefined) return;
+    if (stoppedTimes[pIdx] !== undefined) return;
+
+    var elapsed = Date.now() - timerStart;
+    document.getElementById('timer').textContent = formatTimer(elapsed);
+}
+
+function stopTimer() {
+    if (!timerStart) return;
+    var pIdx = myParticipants[activeTab];
+    if (pIdx === undefined) return;
+    if (stoppedTimes[pIdx] !== undefined) return;
+
+    var elapsed = Date.now() - timerStart;
+    stoppedTimes[pIdx] = elapsed;
+
+    ws.send(JSON.stringify({
+        cmd: 'stopTimer',
+        participant: pIdx,
+        exercise: state.currentExercise,
+        time: elapsed
+    }));
+
+    updateDisplay();
+
+    // Auto-switch naar volgende deelnemer na 1.5 seconde
+    if (myParticipants.length > 1) {
+        for (var i = 0; i < myParticipants.length; i++) {
+            if (stoppedTimes[myParticipants[i]] === undefined) {
+                var nextTab = i;
+                setTimeout(function() {
+                    activeTab = nextTab;
+                    buildTabs();
+                    updateDisplay();
+                }, 1500);
+                break;
+            }
+        }
+    }
+}
+
+function submitScore() {
+    var pIdx = myParticipants[activeTab];
+    if (pIdx === undefined) return;
+
+    var score = parseInt(document.getElementById('scoreInput').value) || 0;
+    ws.send(JSON.stringify({
+        cmd: 'setScore',
+        participant: pIdx,
+        exercise: state.currentExercise,
+        score: score
+    }));
+
+    document.getElementById('scoreSaved').style.display = 'block';
+    setTimeout(function() {
+        document.getElementById('scoreSaved').style.display = 'none';
+    }, 2000);
+}
+
+// ============================================================
+// DISPLAY
+// ============================================================
+
+function updateDisplay() {
+    var timerArea = document.getElementById('timerArea');
+    var stopBtn = document.getElementById('stopBtn');
+    var nameEl = document.getElementById('participantName');
+    var exLabel = document.getElementById('exerciseLabel');
+    var statusEl = document.getElementById('statusText');
+    var timerEl = document.getElementById('timer');
+    var resultEl = document.getElementById('result');
+    var scoreSection = document.getElementById('scoreSection');
+    var scoreSaved = document.getElementById('scoreSaved');
+
+    // Geen deelnemers?
+    if (myParticipants.length === 0) {
+        nameEl.textContent = 'Geen deelnemers toegewezen';
+        exLabel.textContent = 'Wachtend op admin...';
+        statusEl.textContent = '';
+        timerArea.className = 'timer-area state-waiting';
+        stopBtn.disabled = true;
+        resultEl.style.display = 'none';
+        scoreSection.style.display = 'none';
+        return;
+    }
+
+    var pIdx = myParticipants[activeTab];
+    var p = state.participants[pIdx];
+    var isStopped = stoppedTimes[pIdx] !== undefined;
+    var isActive = state.exerciseActive;
+    var ex = state.currentExercise;
+
+    nameEl.textContent = p.name;
+    exLabel.textContent = ex >= 0 ? EXERCISE_NAMES[ex] : 'Wachtend op oefening...';
+
+    if (isStopped) {
+        // Klaar
+        timerArea.className = 'timer-area state-done';
+        statusEl.textContent = 'Tijd geregistreerd!';
+        timerEl.textContent = formatTimer(stoppedTimes[pIdx]);
+        stopBtn.disabled = true;
+        resultEl.style.display = 'block';
+        document.getElementById('resultTime').textContent = formatResult(ex, stoppedTimes[pIdx]);
+
+        // Score invoer voor schietoefening
+        if (ex === 2) {
+            scoreSection.style.display = 'block';
+            scoreSaved.style.display = 'none';
+        } else {
+            scoreSection.style.display = 'none';
+        }
+    }
+    else if (isActive) {
+        // Bezig
+        timerArea.className = 'timer-area state-active';
+        statusEl.textContent = 'BEZIG!';
+        stopBtn.disabled = false;
+        resultEl.style.display = 'none';
+        scoreSection.style.display = 'none';
+    }
+    else {
+        // Wachtend
+        timerArea.className = 'timer-area state-waiting';
+        statusEl.textContent = ex >= 0 ? 'Wachtend op start...' : '';
+        timerEl.textContent = '00:00.00';
+        stopBtn.disabled = true;
+        resultEl.style.display = 'none';
+        scoreSection.style.display = 'none';
+    }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function formatTimer(ms) {
+    var totalSec = Math.floor(ms / 1000);
+    var min = Math.floor(totalSec / 60);
+    var sec = totalSec % 60;
+    var hun = Math.floor((ms % 1000) / 10);
+
+    if (min > 0) {
+        return min + ':' + sec.toString().padStart(2, '0') + '.' + hun.toString().padStart(2, '0');
+    }
+    return sec + '.' + hun.toString().padStart(2, '0');
+}
+
+function formatResult(exercise, ms) {
+    if (exercise === 1) {
+        var totalSec = Math.floor(ms / 1000);
+        var min = Math.floor(totalSec / 60);
+        var sec = totalSec % 60;
+        return min + ':' + sec.toString().padStart(2, '0') + ' minuten';
+    }
+    return (ms / 1000).toFixed(2) + ' seconden';
+}
+
+// Prevent pull-to-refresh op mobiel
+document.addEventListener('touchmove', function(e) {
+    if (e.target.closest('.score-section')) return;
+    e.preventDefault();
+}, { passive: false });
+
+// Start
+init();
+</script>
+</body>
+</html>

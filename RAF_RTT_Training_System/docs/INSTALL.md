@@ -1,8 +1,8 @@
-# BB Target System - Installatie Handleiding
+# RAF RTT Training System - Installatie Handleiding
 
 ## Overzicht
 
-Dit document beschrijft de complete installatie van het BB Target System, van software setup tot eerste gebruik.
+Dit document beschrijft de complete installatie van het RAF RTT Training System, van software setup tot eerste gebruik.
 
 ---
 
@@ -85,7 +85,7 @@ PSRAM: Disabled (of OPI PSRAM als aanwezig)
 
 ```
 ============================================
-   BB TARGET SYSTEM - MASTER CONTROLLER
+   RAF RTT TRAINING SYSTEM - MASTER CONTROLLER
 ============================================
 
 WiFi Access Point starten...
@@ -93,7 +93,7 @@ AP IP: 192.168.4.1
 MAC: XX:XX:XX:XX:XX:XX
 ESP-NOW geinitialiseerd
 Webserver gestart op poort 80
-Verbind met WiFi: BB_Target_System
+Verbind met WiFi: RAF RTT Training
 Open browser: http://192.168.4.1
 
 Master Controller gereed!
@@ -145,7 +145,7 @@ Na upload zie je in Serial Monitor:
 
 ```
 ============================================
-   BB TARGET SYSTEM - TARGET NODE
+   RAF RTT TRAINING SYSTEM - TARGET NODE
    Target ID: 1
 ============================================
 
@@ -228,7 +228,7 @@ Volg het bedradingsschema in `WIRING.md`:
 
 ### 5.2 Webinterface Testen
 
-1. Verbind telefoon/laptop met WiFi: **BB_Target_System**
+1. Verbind telefoon/laptop met WiFi: **RAF RTT Training**
 2. Wachtwoord: **shoot2score**
 3. Open browser: **http://192.168.4.1**
 4. Je ziet het dashboard met targets

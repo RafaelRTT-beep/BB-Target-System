@@ -1,4 +1,4 @@
-# BB Target System - Bedradingsschema
+# RAF RTT Training System - Bedradingsschema
 
 ## Benodigde Materialen
 

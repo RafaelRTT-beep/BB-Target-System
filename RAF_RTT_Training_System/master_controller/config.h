@@ -1,5 +1,5 @@
 /**
- * BB Target System - Master Controller Configuration
+ * RAF RTT Training System - Master Controller Configuration
  */
 
 #ifndef CONFIG_H
@@ -8,7 +8,7 @@
 // ============================================================================
 // NETWERK INSTELLINGEN
 // ============================================================================
-#define WIFI_SSID           "BB_Target_System"
+#define WIFI_SSID           "RAF RTT Training"
 #define WIFI_PASSWORD       "shoot2score"  // Minimaal 8 karakters
 #define WIFI_CHANNEL        1
 

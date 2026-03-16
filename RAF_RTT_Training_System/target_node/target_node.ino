@@ -1,10 +1,10 @@
 /**
  * ============================================================================
- * BB TARGET SYSTEM - TARGET NODE FIRMWARE
+ * RAF RTT TRAINING SYSTEM - TARGET NODE FIRMWARE
  * ============================================================================
  *
  * Versie: 1.0.0
- * Auteur: BB Target System
+ * Auteur: RAF RTT Training System
  *
  * Dit is de firmware voor elke individuele target node.
  * Elke target heeft:
@@ -135,7 +135,7 @@ void setup() {
     delay(100);
 
     Serial.println("\n============================================");
-    Serial.println("   BB TARGET SYSTEM - TARGET NODE");
+    Serial.println("   RAF RTT TRAINING SYSTEM - TARGET NODE");
     Serial.printf("   Target ID: %d\n", TARGET_ID);
     Serial.println("============================================\n");
 
