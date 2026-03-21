@@ -1,4 +1,4 @@
-# BB Target System - Systeemarchitectuur
+# RAF RTT Fysiek - Systeemarchitectuur
 
 ## Overzicht
 
@@ -107,7 +107,7 @@
 ## Bestandsstructuur
 
 ```
-BB_Target_System/
+RAF_RTT_Fysiek/
 ├── master_controller/
 │   ├── master_controller.ino    # Hoofd firmware
 │   ├── config.h                 # Configuratie

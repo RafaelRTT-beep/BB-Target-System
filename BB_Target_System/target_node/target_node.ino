@@ -1,10 +1,10 @@
 /**
  * ============================================================================
- * BB TARGET SYSTEM - TARGET NODE FIRMWARE
+ * RAF RTT FYSIEK - TARGET NODE FIRMWARE
  * ============================================================================
  *
  * Versie: 1.0.0
- * Auteur: BB Target System
+ * Auteur: RAF RTT Fysiek
  *
  * Dit is de firmware voor elke individuele target node.
  * Elke target heeft:
